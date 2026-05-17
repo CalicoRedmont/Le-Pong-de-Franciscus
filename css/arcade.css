@@ -1,0 +1,41 @@
+.cabinet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    linear-gradient(rgba(255,255,255,0.035) 50%, rgba(0,0,0,0.12) 50%),
+    radial-gradient(circle at center, rgba(255,255,255,0.05), rgba(0,0,0,0.48) 78%);
+  background-size: 100% 4px, 100% 100%;
+  mix-blend-mode: screen;
+}
+
+.cabinet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: inset 0 0 70px rgba(0,0,0,0.82);
+  animation: flicker 4s infinite steps(1);
+}
+
+.cabinet:fullscreen::before,
+.cabinet:fullscreen::after,
+.cabinet:-webkit-full-screen::before,
+.cabinet:-webkit-full-screen::after {
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  width: min(calc(100vw - 8px), calc((100vh - 8px) * 16 / 9));
+  height: min(calc(100vh - 8px), calc((100vw - 8px) * 9 / 16));
+  transform: translate(-50%, -50%);
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 0.76; }
+  52% { opacity: 1; }
+  54% { opacity: 0.86; }
+}

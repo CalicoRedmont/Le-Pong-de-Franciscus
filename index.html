@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Le Pong de Franciscus</title>
+  <link rel="stylesheet" href="css/style.css?v=franciscus-foot-88">
+  <link rel="stylesheet" href="css/arcade.css?v=franciscus-foot-88">
+  <link rel="stylesheet" href="css/menu.css?v=franciscus-foot-88">
+</head>
+<body class="access-locked">
+  <section class="access-gate" id="accessGate" aria-label="Accès au jeu">
+    <form class="access-panel" id="accessForm" autocomplete="off">
+      <p class="access-kicker">FRANCISCUS DOS CLUB</p>
+      <h1>LE PONG DE FRANCISCUS</h1>
+      <p class="access-tagline">Entrée réservée aux joueurs autorisés.</p>
+      <label for="accessPassword">Mot de passe</label>
+      <input id="accessPassword" name="password" type="password" inputmode="text" autocomplete="off" autofocus>
+      <button type="submit">ENTRER</button>
+      <p class="access-error" id="accessError" role="alert" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <main class="cabinet" aria-label="Le Pong de Franciscus">
+    <canvas id="game" width="960" height="540" tabindex="0"></canvas>
+  </main>
+
+  <script src="js/storage.js?v=franciscus-foot-88"></script>
+  <script src="js/audio.js?v=franciscus-foot-88"></script>
+  <script src="js/paddle.js?v=franciscus-foot-88"></script>
+  <script src="js/ball.js?v=franciscus-foot-88"></script>
+  <script src="js/targets.js?v=franciscus-foot-88"></script>
+  <script src="js/ai.js?v=franciscus-foot-88"></script>
+  <script src="js/screens.js?v=franciscus-foot-88"></script>
+  <script src="js/game.js?v=franciscus-foot-88"></script>
+  <script src="js/wargame.js?v=franciscus-foot-88"></script>
+  <script src="js/main.js?v=franciscus-foot-88"></script>
+</body>
+</html>
