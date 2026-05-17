@@ -22,6 +22,7 @@
     "Enter",
     "Home"
   ]);
+  const ENABLE_ACCESS_GATE = false;
   let booted = false;
   let pendingBootMode = "title";
 
@@ -38,6 +39,14 @@
     const form = document.getElementById("accessForm");
     const input = document.getElementById("accessPassword");
     const error = document.getElementById("accessError");
+
+    if (!ENABLE_ACCESS_GATE) {
+      document.body.classList.remove("access-locked");
+      if (gate) gate.remove();
+      setCurrentPlayerName("Francisco");
+      bootGame();
+      return;
+    }
 
     if (!gate || !form || !input) {
       setCurrentPlayerName("Francisco");
