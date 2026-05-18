@@ -199,9 +199,9 @@
   ];
 
   const PADDLE_TYPES = [
-    { id: "round", label: "LIBÉRO", description: "Style compact, angles souples.", height: 72, width: 18, speedFactor: 1 },
-    { id: "triangle", label: "NUMÉRO 10", description: "Créatif et précis, +50% vitesse.", height: 70, width: 18, speedFactor: 1.5 },
-    { id: "weird", label: "ATTAQUANT", description: "Petit et brutal, +100% vitesse. Match +30% toutes les 30s.", height: 74, width: 18, speedFactor: 2 }
+    { id: "round", label: "LIBÉRO", shapeLabel: "NORMAL", description: "Style compact, angles souples.", height: 72, width: 18, speedFactor: 1 },
+    { id: "triangle", label: "NUMÉRO 10", shapeLabel: "TRIANGULAIRE", description: "Créatif et précis, +50% vitesse.", height: 70, width: 18, speedFactor: 1.5 },
+    { id: "weird", label: "ATTAQUANT", shapeLabel: "DEMI-CERCLE", description: "Petit et brutal, +100% vitesse. Match +30% toutes les 30s.", height: 74, width: 18, speedFactor: 2 }
   ];
 
   const SCORE_TO_WIN = 5;

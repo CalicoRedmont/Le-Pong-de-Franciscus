@@ -1388,40 +1388,9 @@
       ctx.fillStyle = "rgba(0,0,0,0.86)";
       ctx.strokeStyle = color;
       ctx.lineWidth = 3;
-      if (paddle.typeId === "round") {
-        roundRect(ctx, paddle.x, paddle.y, paddle.w, paddle.h, paddle.w / 2);
-        ctx.fill();
-        ctx.stroke();
-      } else if (paddle.typeId === "triangle") {
-        ctx.beginPath();
-        if (side === "left") {
-          ctx.moveTo(paddle.x, paddle.y);
-          ctx.lineTo(paddle.x, paddle.y + paddle.h);
-          ctx.lineTo(paddle.x + paddle.w, paddle.y + paddle.h / 2);
-        } else {
-          ctx.moveTo(paddle.x + paddle.w, paddle.y);
-          ctx.lineTo(paddle.x + paddle.w, paddle.y + paddle.h);
-          ctx.lineTo(paddle.x, paddle.y + paddle.h / 2);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      } else if (paddle.typeId === "weird") {
-        ctx.beginPath();
-        ctx.moveTo(paddle.x + 4, paddle.y);
-        ctx.lineTo(paddle.x + paddle.w, paddle.y + 12);
-        ctx.lineTo(paddle.x + paddle.w - 6, paddle.y + paddle.h * 0.42);
-        ctx.lineTo(paddle.x + paddle.w, paddle.y + paddle.h - 10);
-        ctx.lineTo(paddle.x + 2, paddle.y + paddle.h);
-        ctx.lineTo(paddle.x + 8, paddle.y + paddle.h * 0.58);
-        ctx.lineTo(paddle.x, paddle.y + paddle.h * 0.22);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      } else {
-        ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
-        ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h);
-      }
+      keeperShapePath(ctx, paddle.typeId, paddle.x, paddle.y, paddle.w, paddle.h, side);
+      ctx.fill();
+      ctx.stroke();
       ctx.fillStyle = color;
       ctx.globalAlpha = 0.35;
       ctx.fillRect(paddle.x + 4, paddle.y + 8, Math.max(4, paddle.w - 8), Math.max(8, paddle.h - 16));
@@ -1549,18 +1518,59 @@
       this.drawPlay();
       this.ctx.fillStyle = "rgba(0,0,0,0.74)";
       this.ctx.fillRect(0, 0, this.width, this.height);
-      this.neon("PAUSE", 480, 220, 52, this.colors.green, "center");
-      this.drawText(CFG.PAUSE_TAGLINE, 480, 265, 17, this.colors.amber, "center");
-      this.drawText("Quelqu'un a voulu parler sérieusement. Reprise recommandée.", 480, 292, 16, this.colors.white, "center");
-      this.drawText("Espace : reprendre   1/2 styles   R replay   Échap quitter", 480, 336, 15, this.colors.amber, "center");
+      this.neon("PAUSE", 480, 96, 44, this.colors.green, "center");
+      this.drawText(CFG.PAUSE_TAGLINE, 480, 132, 15, this.colors.amber, "center");
+      this.drawText("FORME DES GARDIENS", 480, 164, 17, this.colors.white, "center");
       const buttons = this.pauseActionButtons ? this.pauseActionButtons() : [];
-      buttons.forEach(button => this.drawArcadeButton(button.x, button.y, button.w, button.h, button.label, button.color));
+      buttons.forEach(button => {
+        if (button.kind === "keeper-shape") this.drawKeeperShapeOption(button);
+        else this.drawArcadeButton(button.x, button.y, button.w, button.h, button.label, button.color);
+      });
       const hints = [];
-      if (this.sideForRole && this.sideForRole("p1")) hints.push("1 : style J1");
-      if (this.sideForRole && this.sideForRole("p2")) hints.push("2 : style J2");
+      if (this.sideForRole && this.sideForRole("p1")) hints.push("1 : J1 suivant");
+      if (this.sideForRole && this.sideForRole("p2")) hints.push("2 : J2 suivant");
       if (this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) hints.push("Entrée/T : tableau");
-      this.drawText(hints.join("   "), 480, 405, 13, this.colors.white, "center");
+      this.drawText("Clique une forme   Espace : reprendre   R replay   Échap quitter", 480, 488, 13, this.colors.amber, "center");
+      this.drawText(hints.join("   "), 480, 516, 12, this.colors.white, "center");
       this.drawScanlines();
+    };
+
+    Game.prototype.drawKeeperShapeOption = function (button) {
+      const ctx = this.ctx;
+      const color = button.selected ? this.colors.amber : button.color;
+      if (button.showRoleLabel) this.drawText(button.roleLabel, button.x - 34, button.y + 40, 18, this.colors.white, "center");
+      ctx.save();
+      ctx.fillStyle = button.selected ? "rgba(255,208,79,0.12)" : "rgba(0,0,0,0.62)";
+      ctx.strokeStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = button.selected ? 12 : 6;
+      ctx.lineWidth = button.selected ? 2 : 1;
+      ctx.strokeRect(button.x, button.y, button.w, button.h);
+      ctx.fillRect(button.x, button.y, button.w, button.h);
+      ctx.restore();
+
+      this.drawKeeperShapePreview(button.typeId, button.x + 18, button.y + 9, 30, 46, color, button.side);
+      this.drawText(button.label, button.x + button.w - 12, button.y + 25, 10, color, "right");
+      this.drawText(button.selected ? "ACTIF" : "CHOISIR", button.x + button.w - 12, button.y + 47, 9, button.selected ? this.colors.white : this.colors.greenSoft, "right");
+    };
+
+    Game.prototype.drawKeeperShapePreview = function (typeId, x, y, w, h, color, side = "left") {
+      const ctx = this.ctx;
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,0.86)";
+      ctx.strokeStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10;
+      ctx.lineWidth = 2;
+      keeperShapePath(ctx, typeId, x, y, w, h, side);
+      ctx.fill();
+      ctx.stroke();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = color;
+      keeperShapePath(ctx, typeId, x, y, w, h, side);
+      ctx.clip();
+      ctx.fillRect(x + 6, y + 8, Math.max(4, w - 12), Math.max(8, h - 16));
+      ctx.restore();
     };
 
     Game.prototype.drawMatchEnd = function () {
@@ -1607,6 +1617,40 @@
     ctx.lineTo(x, y + r);
     ctx.quadraticCurveTo(x, y, x + r, y);
     ctx.closePath();
+  }
+
+  function keeperShapePath(ctx, typeId, x, y, w, h, side) {
+    if (typeId === "triangle") {
+      ctx.beginPath();
+      if (side === "left") {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + h);
+        ctx.lineTo(x + w, y + h / 2);
+      } else {
+        ctx.moveTo(x + w, y);
+        ctx.lineTo(x + w, y + h);
+        ctx.lineTo(x, y + h / 2);
+      }
+      ctx.closePath();
+      return;
+    }
+
+    if (typeId === "weird") {
+      ctx.beginPath();
+      if (side === "left") {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + h);
+        ctx.ellipse(x, y + h / 2, w, h / 2, 0, Math.PI / 2, -Math.PI / 2, true);
+      } else {
+        ctx.moveTo(x + w, y);
+        ctx.lineTo(x + w, y + h);
+        ctx.ellipse(x + w, y + h / 2, w, h / 2, 0, Math.PI / 2, Math.PI * 1.5, false);
+      }
+      ctx.closePath();
+      return;
+    }
+
+    roundRect(ctx, x, y, w, h, Math.min(8, w / 2));
   }
 
   function formatTime(seconds) {

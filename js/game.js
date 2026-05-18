@@ -1450,6 +1450,14 @@
       const paddle = side === "left" ? this.left : this.right;
       const index = this.paddleIndex(paddle.typeId);
       const next = CFG.PADDLE_TYPES[wrap(index + 1, CFG.PADDLE_TYPES.length)];
+      return this.setRacketForRole(role, next.id);
+    }
+
+    setRacketForRole(role, typeId) {
+      const side = this.leftControl === role ? "left" : this.rightControl === role ? "right" : "";
+      if (!side) return false;
+      const paddle = side === "left" ? this.left : this.right;
+      const next = CFG.paddleTypeById(typeId);
       paddle.setType(next.id);
       paddle.clamp(this.bounds);
       if (this.currentMatchConfig) {
@@ -1458,27 +1466,60 @@
       }
       if (role === "p1") this.selected.p1Paddle = next.id;
       if (role === "p2") this.selected.p2Paddle = next.id;
-      this.message(`${role.toUpperCase()} change de joueur : ${next.label}.`, 2);
+      this.message(`${role.toUpperCase()} gardien : ${next.shapeLabel || next.label}.`, 2);
       this.audio.play("menu");
       return true;
     }
 
     pauseActionButtons() {
       const defs = [];
-      if (this.sideForRole("p1")) defs.push({ action: "racket-p1", label: "J1 STYLE", w: 138, color: this.colors.amber });
-      if (this.sideForRole("p2")) defs.push({ action: "racket-p2", label: "J2 STYLE", w: 138, color: this.colors.amber });
-      if (this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) {
-        defs.push({ action: "bracket", label: "TABLEAU DU TOURNOI", w: 228, color: this.colors.green });
-      }
-
-      const gap = 14;
-      const totalW = defs.reduce((sum, item) => sum + item.w, 0) + Math.max(0, defs.length - 1) * gap;
-      let x = (this.width - totalW) / 2;
-      return defs.map(item => {
-        const button = Object.assign({ x, y: 356, h: 30 }, item);
-        x += item.w + gap;
-        return button;
+      const roles = [];
+      if (this.sideForRole("p1")) roles.push("p1");
+      if (this.sideForRole("p2")) roles.push("p2");
+      const optionW = 132;
+      const optionH = 64;
+      const roleW = 60;
+      const gap = 12;
+      const rowGap = 88;
+      const top = roles.length > 1 ? 188 : 244;
+      const totalW = roleW + CFG.PADDLE_TYPES.length * optionW + Math.max(0, CFG.PADDLE_TYPES.length - 1) * gap;
+      const startX = (this.width - totalW) / 2;
+      roles.forEach((role, rowIndex) => {
+        const side = this.sideForRole(role);
+        const paddle = side === "left" ? this.left : this.right;
+        const y = top + rowIndex * rowGap;
+        CFG.PADDLE_TYPES.forEach((type, typeIndex) => {
+          const selected = paddle && paddle.typeId === type.id;
+          defs.push({
+            action: `racket-${role}-${type.id}`,
+            kind: "keeper-shape",
+            role,
+            roleLabel: role === "p1" ? "J1" : "J2",
+            showRoleLabel: typeIndex === 0,
+            side,
+            typeId: type.id,
+            label: type.shapeLabel || type.label,
+            selected,
+            x: startX + roleW + typeIndex * (optionW + gap),
+            y,
+            w: optionW,
+            h: optionH,
+            color: selected ? this.colors.amber : this.colors.green
+          });
+        });
       });
+      if (this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) {
+        defs.push({
+          action: "bracket",
+          label: "TABLEAU DU TOURNOI",
+          x: 366,
+          y: top + roles.length * rowGap + 10,
+          w: 228,
+          h: 30,
+          color: this.colors.green
+        });
+      }
+      return defs;
     }
 
     homeButtonRect() {
@@ -1652,6 +1693,8 @@
     }
 
     handlePauseAction(action) {
+      const match = /^racket-(p[12])-(.+)$/.exec(action);
+      if (match) return this.setRacketForRole(match[1], match[2]);
       if (action === "racket-p1") return this.cycleRacketForRole("p1");
       if (action === "racket-p2") return this.cycleRacketForRole("p2");
       if (action === "bracket" && this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) {

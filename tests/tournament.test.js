@@ -251,6 +251,7 @@ test("keeper styles expose fifty and one hundred percent speed bonuses", () => {
   assert.equal(config.paddleTypeById("triangle").speedFactor, 1.5);
   assert.equal(config.paddleTypeById("weird").speedFactor, 2);
   assert.equal(JSON.stringify(config.PADDLE_TYPES.map(type => type.label)), JSON.stringify(["LIBÉRO", "NUMÉRO 10", "ATTAQUANT"]));
+  assert.equal(JSON.stringify(config.PADDLE_TYPES.map(type => type.shapeLabel)), JSON.stringify(["NORMAL", "TRIANGULAIRE", "DEMI-CERCLE"]));
   assert.equal(numero10.impact({ y: numero10.cy }).speedFactor, 1.5);
   assert.equal(attaquant.impact({ y: attaquant.cy }).speedFactor, 2);
 });
