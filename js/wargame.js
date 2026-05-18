@@ -782,7 +782,7 @@
       this.addWarExplosion(p.x + 7, p.y - 5, this.colors.amber, 16, { life: 0.42, grow: 38 });
       this.stopWarGameRadarLoop();
       this.screen = "wargame";
-      this.audio.play("destroy");
+      this.playWarGameAircraftExplosionSound();
     };
 
     Game.prototype.startWarGameVictory = function () {
@@ -800,6 +800,91 @@
       const life = options.life || 0.36;
       const grow = options.grow || radius * 2.4;
       this.wargame.explosions.push({ x, y, r: 3, maxR: radius, grow, life, color });
+    };
+
+    Game.prototype.playWarGameAircraftExplosionSound = function () {
+      const ctx = this.warGameAudioContext();
+      if (!ctx) {
+        if (this.audio && this.audio.play) this.audio.play("destroy");
+        return false;
+      }
+      const now = ctx.currentTime;
+      this.playWarGameExplosionNoise(ctx, now);
+      this.playWarGameExplosionDrop(ctx, now);
+      this.playWarGameExplosionCrackle(ctx, now);
+      return true;
+    };
+
+    Game.prototype.playWarGameExplosionNoise = function (ctx, now) {
+      const duration = 0.46;
+      const length = Math.floor(ctx.sampleRate * duration);
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) {
+        const t = i / length;
+        const gate = Math.floor(t * 42) % 2 === 0 ? 1 : 0.35;
+        const decay = Math.pow(1 - t, 2.1);
+        const raw = Math.random() * 2 - 1;
+        const stepped = Math.round(raw * 5) / 5;
+        data[i] = stepped * decay * gate;
+      }
+      const noise = ctx.createBufferSource();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      noise.buffer = buffer;
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1800, now);
+      filter.frequency.exponentialRampToValueAtTime(140, now + duration);
+      filter.Q.setValueAtTime(7, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + duration + 0.02);
+    };
+
+    Game.prototype.playWarGameExplosionDrop = function (ctx, now) {
+      [
+        { wave: "sawtooth", start: 132, end: 31, volume: 0.13, duration: 0.42 },
+        { wave: "square", start: 72, end: 24, volume: 0.075, duration: 0.34 }
+      ].forEach(tone => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = tone.wave;
+        osc.frequency.setValueAtTime(tone.start, now);
+        osc.frequency.exponentialRampToValueAtTime(tone.end, now + tone.duration);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(tone.volume, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + tone.duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + tone.duration + 0.03);
+      });
+    };
+
+    Game.prototype.playWarGameExplosionCrackle = function (ctx, now) {
+      [0.03, 0.09, 0.16, 0.24].forEach((offset, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(940 - index * 170, now + offset);
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(720 + index * 260, now + offset);
+        filter.Q.setValueAtTime(12, now + offset);
+        gain.gain.setValueAtTime(0.0001, now + offset);
+        gain.gain.exponentialRampToValueAtTime(0.032, now + offset + 0.004);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.045);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.055);
+      });
     };
 
     Game.prototype.playWarGameLockBeep = function (threat = 0) {

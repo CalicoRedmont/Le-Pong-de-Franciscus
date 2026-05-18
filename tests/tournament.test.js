@@ -487,6 +487,7 @@ test("wargame red and homing missiles explode aircraft before game over", () => 
     const game = new windowRef.Game();
     const played = [];
     game.audio = { play(sound) { played.push(sound); } };
+    game.playWarGameAircraftExplosionSound = () => { played.push("aircraft-explosion"); };
     game.colors = { red: "#ff3855", amber: "#ffd04f", green: "#39ff68" };
 
     game.resetWarGameState();
@@ -514,7 +515,8 @@ test("wargame red and homing missiles explode aircraft before game over", () => 
     assert.equal(game.wargame.gameOver, false);
     assert.equal(game.wargame.playerAircraft.destroyed, true);
     assert.equal(game.wargame.explosions.length >= 1, true);
-    assert.equal(played.includes("destroy"), true);
+    assert.equal(played.includes("aircraft-explosion"), true);
+    assert.equal(played.includes("destroy"), false);
     assert.equal(played.includes("lose"), false);
     assert.equal(target.active, true);
     assert.equal(game.wargame.costM, 0);
