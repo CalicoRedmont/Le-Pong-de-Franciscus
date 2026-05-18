@@ -409,6 +409,46 @@ test("solo and duel matches show player faces before kickoff", () => {
   assert.equal(game.pendingMatchConfig, null);
 });
 
+test("match intro arrows can move focus between launch and home", () => {
+  const windowRef = loadGame(["francisco", "julien"]);
+  const game = Object.create(windowRef.Game.prototype);
+  let wentHome = false;
+  let launched = false;
+
+  game.audio = { play() {} };
+  game.screen = "matchIntro";
+  game.waitingControl = null;
+  game.tournamentExitPrompt = null;
+  game.homeButtonFocused = false;
+  game.matchIntroFocus = "launch";
+  game.goHome = () => {
+    wentHome = true;
+    return true;
+  };
+  game.launchPendingMatch = () => {
+    launched = true;
+    return true;
+  };
+
+  game.handleKeyDown("ArrowUp");
+  assert.equal(game.homeButtonFocused, true);
+  assert.equal(game.matchIntroFocus, "home");
+
+  game.handleKeyDown("ArrowDown");
+  assert.equal(game.homeButtonFocused, false);
+  assert.equal(game.matchIntroFocus, "launch");
+
+  game.handleKeyDown("Enter");
+  assert.equal(launched, true);
+  assert.equal(wentHome, false);
+
+  launched = false;
+  game.handleKeyDown("ArrowRight");
+  game.handleKeyDown("Enter");
+  assert.equal(wentHome, true);
+  assert.equal(launched, false);
+});
+
 test("pause arrow keys select keeper shapes", () => {
   const windowRef = loadGame(["francisco", "julien"]);
   const game = Object.create(windowRef.Game.prototype);

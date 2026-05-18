@@ -48,6 +48,7 @@
       this.tournamentSummaryMatchId = "";
       this.countdownKind = "start";
       this.homeButtonFocused = false;
+      this.matchIntroFocus = "launch";
       this.pendingMatchConfig = null;
 
       this.menuIndex = 0;
@@ -197,6 +198,7 @@
       this.tournamentPhaseTransition = null;
       this.tournamentSummaryMatchId = "";
       this.pendingMatchConfig = null;
+      this.matchIntroFocus = "launch";
     }
 
     key(name) {
@@ -944,6 +946,8 @@
 
     startMatchIntro(config) {
       this.pendingMatchConfig = Object.assign({}, config);
+      this.homeButtonFocused = false;
+      this.matchIntroFocus = "launch";
       this.screen = "matchIntro";
       const left = this.resolvePlayerForMatch(config.leftPlayerId);
       const right = this.resolvePlayerForMatch(config.rightPlayerId);
@@ -2079,6 +2083,7 @@
       if (this.tournamentExitPrompt) return this.handleTournamentExitPromptKey(key);
       if (key === "Home") return this.goHome();
       if (this.screen === "pause") return this.handlePauseKey(key);
+      if (this.screen === "matchIntro") return this.handleMatchIntroKey(key);
       if (this.handleHomeButtonKey(key)) return;
       if (this.screen === "title") return this.handleTitleKey(key);
       if (this.screen === "how" || this.screen === "credits") return this.handleSimplePanelKey(key);
@@ -2086,7 +2091,6 @@
       if (this.screen === "playerSelect") return this.handlePlayerSelectKey(key);
       if (this.screen === "opponentSelect") return this.handleOpponentSelectKey(key);
       if (this.screen === "setupSelect") return this.handleSetupKey(key);
-      if (this.screen === "matchIntro") return this.handleMatchIntroKey(key);
       if (this.screen === "tournamentOpponents") return this.handleTournamentOpponentsKey(key);
       if (this.screen === "tournamentSetup") return this.handleTournamentSetupKey(key);
       if (this.screen === "tournamentBracket") return this.handleTournamentBracketKey(key);
@@ -2231,14 +2235,33 @@
     }
 
     handleMatchIntroKey(key) {
+      if (this.isDirectionalKey(key)) return this.moveMatchIntroFocus();
       if (key === "Escape") {
+        this.homeButtonFocused = false;
+        this.matchIntroFocus = "launch";
         this.screen = "setupSelect";
         this.audio.play("menu");
         return;
       }
       if (key === "Enter" || key === " ") {
+        if (this.homeButtonFocused || this.matchIntroFocus === "home") {
+          this.audio.play("validate");
+          return this.goHome();
+        }
         this.launchPendingMatch();
       }
+    }
+
+    moveMatchIntroFocus() {
+      if (this.homeButtonFocused || this.matchIntroFocus === "home") {
+        this.homeButtonFocused = false;
+        this.matchIntroFocus = "launch";
+      } else {
+        this.homeButtonFocused = true;
+        this.matchIntroFocus = "home";
+      }
+      this.audio.play("menu");
+      return true;
     }
 
     changeSetupValue(dir) {

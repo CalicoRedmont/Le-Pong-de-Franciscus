@@ -434,8 +434,10 @@
       this.drawText(mode.label, 480, 338, 18, this.colors.green, "center");
       this.drawText(mode.description, 480, 366, 13, this.colors.white, "center");
       this.drawText(`${left.name}  /  ${right.name}`, 480, 404, 18, this.colors.amber, "center");
-      this.drawArcadeButton(340, 456, 280, 38, "LANCER LE MATCH", this.colors.amber);
-      this.drawText("Entrée ou Espace : lancer   Échap : réglages", 480, 516, 13, this.colors.green, "center");
+      const launchFocused = !this.homeButtonFocused && this.matchIntroFocus !== "home";
+      this.drawArcadeButton(340, 456, 280, 38, "LANCER LE MATCH", launchFocused ? this.colors.amber : this.colors.green);
+      if (launchFocused) this.drawText("▶", 316, 480, 18, this.colors.amber);
+      this.drawText("←↑→↓ choisir   Entrée/Espace valider   Échap réglages", 480, 516, 13, this.colors.green, "center");
       this.drawScanlines();
     };
 
