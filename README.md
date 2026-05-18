@@ -13,6 +13,18 @@ Exemples :
 - `Hubert`
 - `Louis`
 - `Olivier`
+- `Patricia`
+- `Kamar`
+- `Yohan`
+- `Vijay`
+- `Audrey`
+- `Alexis`
+- `Mostapha`
+- `Louis-L`
+- `Stéphanie`
+- `Lauriane`
+- `Cécile`
+- `Florence`
 
 Le mot de passe caché `WARGAME` reste disponible si `ENABLE_WARGAME` vaut `true` dans `js/targets.js`.
 

@@ -353,15 +353,9 @@
       const rows = Math.max(1, Math.ceil(entries.length / grid.cols));
       const gridH = rows * grid.tileH + (rows - 1) * grid.gapY;
       const side = { x: 620, y: grid.y, w: 278 };
-      const machineH = grid.tileH;
-      const selectedH = this.flow === "solo" ? gridH - grid.gapY - machineH : gridH;
       this.drawPlayerGrid(entries, this.playerCursor, grid.x, grid.y, grid.cols, grid.tileW, grid.tileH);
       const picked = entries[this.playerCursor] || entries[0];
-      this.drawSelectedCard(picked, side.x, side.y, side.w, selectedH);
-      if (this.flow === "solo") {
-        const machineX = Math.round((this.width - side.w) / 2);
-        this.drawSoloMachineOpponent(machineX, side.y + selectedH + grid.gapY, side.w, machineH);
-      }
+      this.drawSelectedCard(picked, side.x, side.y, side.w, gridH);
       this.drawScanlines();
       this.drawPlayerGridNames(entries, this.playerCursor, grid.x, grid.y, grid.cols, grid.tileW, grid.tileH);
     };
@@ -1028,9 +1022,10 @@
       ctx.lineWidth = selected || chosen ? 3 : 1;
       ctx.strokeRect(x, y, w, h);
       if (chosen) this.drawText("✓", x + w - 15, y + 18, 16, this.colors.amber, "center");
-      const portraitSize = Math.min(48, h - 16);
-      const textX = x + portraitSize + 14;
-      this.drawPortrait(player, x + 8, y + 8, portraitSize, portraitSize, selected);
+      const portraitSize = Math.min(54, h - 16);
+      const portraitX = x + 6;
+      const textX = portraitX + portraitSize + 8;
+      this.drawPortrait(player, portraitX, y + 8, portraitSize, portraitSize, selected);
       this.drawTileName(player.name, textX, y + 38, x + w - textX - 8, selected ? this.colors.amber : "#8bff98");
       ctx.restore();
     };
@@ -1042,8 +1037,8 @@
         const row = Math.floor(index / cols);
         const xx = x + col * (tileW + 8);
         const yy = y + row * (tileH + 10);
-        const portraitSize = Math.min(48, tileH - 16);
-        const textX = xx + portraitSize + 14;
+        const portraitSize = Math.min(54, tileH - 16);
+        const textX = xx + 6 + portraitSize + 8;
         const selected = index === cursor;
         const disabled = entry.id === disabledId;
         this.ctx.save();

@@ -10,11 +10,27 @@
     "Louis.jpg",
     "Olivier.jpg",
     "Benjamin.jpg",
-    "Laure-Anne.jpg",
     "Pascal.jpg",
+    "Patricia.jpg",
+    "Kamar.jpg",
+    "Yohan.jpg",
+    "Vijay.jpg",
+    "Audrey.jpg",
+    "Alexis.jpg",
+    "Mostapha.jpg",
+    "Louis_L.jpg",
+    "Stephanie.jpg",
+    "Lauriane.jpg",
+    "Cecile.jpg",
+    "Florence.jpg",
     "La_Machine.jpg"
   ];
   const MACHINE_IMAGE_FILE = "La_Machine.jpg";
+  const PLAYER_NAME_OVERRIDES = {
+    Cecile: "Cécile",
+    Louis_L: "Louis-L",
+    Stephanie: "Stéphanie"
+  };
 
   const PLAYER_LINES = {
     francisco: "Capitaine local. Le ballon lui obéit uniquement quand il y pense.",
@@ -24,8 +40,19 @@
     louis: "Jeune prodige homologué par aucun comité.",
     olivier: "Forfait le dimanche matin.",
     benjamin: "Grand blond avec une chaussure... rien qu'une chaussure.",
-    laureanne: "Le ballon hésite aussi.",
-    pascal: "Libéro de terminal, relance au phosphore."
+    pascal: "Libéro de terminal, relance au phosphore.",
+    patricia: "Le ski l'a ralentie une fois. Le ballon n'a pas cette chance.",
+    kamar: "Intemporel. Il redémarre les légendes sans perdre le ticket.",
+    yohan: "Humeur versatile, ping stable, patience variable.",
+    vijay: "Calme apparent, regard de terminal. Le ballon attend son autorisation.",
+    audrey: "Elle lit les règles, puis les dribble avec le sourire.",
+    alexis: "Calme au départ, précis au tacle administratif.",
+    mostapha: "Il fait parler les chiffres, puis le tableau d'affichage.",
+    louisl: "Il calcule l'angle impossible, puis le rend obligatoire.",
+    stephanie: "Sourire contrôlé, carton vert ou silence immédiat.",
+    lauriane: "Elle classe les humeurs et parfois les adversaires.",
+    cecile: "Sourire en coin. Le ballon croit partir libre, erreur de procédure.",
+    florence: "Un peu sèche. Elle tamponne les ego sans bavure."
   };
 
   const PLAYER_DIFFICULTIES = {
@@ -36,8 +63,19 @@
     louis: "easy",
     olivier: "normal",
     benjamin: "normal",
-    laureanne: "hard",
-    pascal: "normal"
+    pascal: "normal",
+    patricia: "normal",
+    kamar: "normal",
+    yohan: "hard",
+    vijay: "normal",
+    audrey: "normal",
+    alexis: "normal",
+    mostapha: "normal",
+    louisl: "hard",
+    stephanie: "normal",
+    lauriane: "normal",
+    cecile: "normal",
+    florence: "normal"
   };
 
   const PLAYERS = PLAYER_IMAGE_FILES
@@ -60,8 +98,19 @@
     louis: { shortProfile: "appel profond", profile: "appel profond", quote: PLAYER_LINES.louis },
     olivier: { shortProfile: "tacle poli", profile: "tacle poli", quote: PLAYER_LINES.olivier },
     benjamin: { shortProfile: "frappe nette", profile: "frappe nette", quote: PLAYER_LINES.benjamin },
-    laureanne: { shortProfile: "tempo calme", profile: "tempo calme", quote: PLAYER_LINES.laureanne },
-    pascal: { shortProfile: "relance verte", profile: "relance verte", quote: PLAYER_LINES.pascal }
+    pascal: { shortProfile: "relance verte", profile: "relance verte", quote: PLAYER_LINES.pascal },
+    patricia: { shortProfile: "ski suspect", profile: "ski suspect", quote: PLAYER_LINES.patricia },
+    kamar: { shortProfile: "ticket éternel", profile: "ticket éternel", quote: PLAYER_LINES.kamar },
+    yohan: { shortProfile: "humeur variable", profile: "humeur variable", quote: PLAYER_LINES.yohan },
+    vijay: { shortProfile: "calme terminal", profile: "contrôle silencieux", quote: PLAYER_LINES.vijay },
+    audrey: { shortProfile: "règles dribblées", profile: "règles dribblées", quote: PLAYER_LINES.audrey },
+    alexis: { shortProfile: "tacle précis", profile: "tacle précis", quote: PLAYER_LINES.alexis },
+    mostapha: { shortProfile: "score bavard", profile: "score bavard", quote: PLAYER_LINES.mostapha },
+    louisl: { shortProfile: "angle impossible", profile: "angle impossible", quote: PLAYER_LINES.louisl },
+    stephanie: { shortProfile: "carton vert", profile: "carton vert", quote: PLAYER_LINES.stephanie },
+    lauriane: { shortProfile: "humeurs classées", profile: "humeurs classées", quote: PLAYER_LINES.lauriane },
+    cecile: { shortProfile: "procédure surprise", profile: "procédure surprise", quote: PLAYER_LINES.cecile },
+    florence: { shortProfile: "ego tamponné", profile: "ego tamponné", quote: PLAYER_LINES.florence }
   };
 
   const LOSER_COMMENTS = [
@@ -243,7 +292,8 @@
   }
 
   function displayNameFromImageFile(file) {
-    return baseName(file)
+    const name = baseName(file);
+    return (PLAYER_NAME_OVERRIDES[name] || name)
       .replace(/_/g, " ")
       .replace(/-/g, "-")
       .trim();
@@ -269,6 +319,7 @@
   function playerImageFallbacks(file) {
     const name = baseName(file);
     const fallbacks = [file, `OLD/${name}.png`];
+    if (name === "Cecile") fallbacks.push("OLD/Cécile.png");
     if (name === "Julien") fallbacks.push("OLD/Julien-1.png");
     return fallbacks;
   }

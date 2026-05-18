@@ -223,8 +223,19 @@ test("football players are generated from local portrait filenames", () => {
     "Louis",
     "Olivier",
     "Benjamin",
-    "Laure-Anne",
     "Pascal",
+    "Patricia",
+    "Kamar",
+    "Yohan",
+    "Vijay",
+    "Audrey",
+    "Alexis",
+    "Mostapha",
+    "Louis-L",
+    "Stéphanie",
+    "Lauriane",
+    "Cécile",
+    "Florence",
     "La Machine"
   ]));
   assert.equal(config.PLAYERS[0].id, "francisco");

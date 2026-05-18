@@ -7,10 +7,21 @@
     "Sandra",
     "Hubert",
     "Louis",
-    "Laure-Anne",
     "Olivier",
     "Pascal",
-    "Benjamin"
+    "Benjamin",
+    "Patricia",
+    "Kamar",
+    "Yohan",
+    "Vijay",
+    "Audrey",
+    "Alexis",
+    "Mostapha",
+    "Louis-L",
+    "Stéphanie",
+    "Lauriane",
+    "Cécile",
+    "Florence"
   ];
   const preventKeys = new Set([
     "ArrowUp",
