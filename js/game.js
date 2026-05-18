@@ -215,6 +215,7 @@
 
     startSoloFlow() {
       this.flow = "solo";
+      this.resetStartingPaddleSelection("match");
       if (this.selected.humanId === "machine") this.selected.humanId = "francisco";
       this.selected.opponentId = "machine";
       this.playerCursor = this.playerIndexInEntries(this.selected.humanId, this.playerSelectEntries("solo"));
@@ -224,6 +225,7 @@
 
     startDuelFlow() {
       this.flow = "duel-p1";
+      this.resetStartingPaddleSelection("match");
       if (this.selected.p1Id === "machine") this.selected.p1Id = "francisco";
       if (this.selected.p2Id === "machine") this.selected.p2Id = "julien";
       this.playerCursor = this.playerIndexInEntries(this.selected.p1Id, this.playerSelectEntries("duel-p1"));
@@ -233,10 +235,23 @@
 
     startTournamentFlow() {
       this.flow = "tournament-player";
+      this.resetStartingPaddleSelection("tournament");
       if (this.selected.humanId === "machine") this.selected.humanId = "francisco";
       this.playerCursor = this.playerIndexInEntries(this.selected.humanId, this.playerSelectEntries("tournament-player"));
       this.screen = "playerSelect";
       this.message("Sélection tournoi : Francisco par défaut, gloire possible.", 2);
+    }
+
+    resetStartingPaddleSelection(scope = "all") {
+      if (!this.selected) return;
+      if (scope === "all" || scope === "match") {
+        this.selected.p1Paddle = DEFAULT_PADDLE_TYPE;
+        this.selected.p2Paddle = DEFAULT_PADDLE_TYPE;
+        this.paddleCursor = this.paddleIndex(DEFAULT_PADDLE_TYPE);
+      }
+      if (scope === "all" || scope === "tournament") {
+        this.selected.tournamentPaddle = DEFAULT_PADDLE_TYPE;
+      }
     }
 
     playerIndex(id) {
@@ -879,21 +894,25 @@
     }
 
     beginMatch(config) {
+      const matchConfig = Object.assign({}, config, {
+        leftPaddleType: DEFAULT_PADDLE_TYPE,
+        rightPaddleType: DEFAULT_PADDLE_TYPE
+      });
       this.pendingMatchConfig = null;
-      this.mode = config.kind || "solo";
-      this.currentMatchConfig = Object.assign({}, config);
-      this.currentMatchMode = CFG.matchModeById(config.modeId || "speed");
-      this.scoreToWin = config.scoreToWin || CFG.SCORE_TO_WIN;
-      this.leftPlayer = this.resolvePlayerForMatch(config.leftPlayerId);
-      this.rightPlayer = this.resolvePlayerForMatch(config.rightPlayerId);
-      this.left = new window.Paddle("left", 50, config.leftPaddleType || DEFAULT_PADDLE_TYPE, this.colors.green);
-      this.right = new window.Paddle("right", this.width - 70, config.rightPaddleType || DEFAULT_PADDLE_TYPE, this.colors.red);
+      this.mode = matchConfig.kind || "solo";
+      this.currentMatchConfig = Object.assign({}, matchConfig);
+      this.currentMatchMode = CFG.matchModeById(matchConfig.modeId || "speed");
+      this.scoreToWin = matchConfig.scoreToWin || CFG.SCORE_TO_WIN;
+      this.leftPlayer = this.resolvePlayerForMatch(matchConfig.leftPlayerId);
+      this.rightPlayer = this.resolvePlayerForMatch(matchConfig.rightPlayerId);
+      this.left = new window.Paddle("left", 50, matchConfig.leftPaddleType, this.colors.green);
+      this.right = new window.Paddle("right", this.width - 70, matchConfig.rightPaddleType, this.colors.red);
       this.left.power = 0;
       this.right.power = 0;
-      this.leftControl = config.leftControl || "p1";
-      this.rightControl = config.rightControl || "ai";
-      this.leftAI = this.leftControl === "ai" ? new window.LocalPongAI(this.left, config.leftDifficulty || this.leftPlayer.difficulty) : null;
-      this.rightAI = this.rightControl === "ai" ? new window.LocalPongAI(this.right, config.rightDifficulty || this.rightPlayer.difficulty) : null;
+      this.leftControl = matchConfig.leftControl || "p1";
+      this.rightControl = matchConfig.rightControl || "ai";
+      this.leftAI = this.leftControl === "ai" ? new window.LocalPongAI(this.left, matchConfig.leftDifficulty || this.leftPlayer.difficulty) : null;
+      this.rightAI = this.rightControl === "ai" ? new window.LocalPongAI(this.right, matchConfig.rightDifficulty || this.rightPlayer.difficulty) : null;
       this.shuttles = [];
       this.particles = [];
       this.elapsed = 0;
@@ -917,6 +936,7 @@
 
     startSoloMatch() {
       this.selected.opponentId = "machine";
+      this.resetStartingPaddleSelection("match");
       this.startMatchIntro({
         kind: "solo",
         leftPlayerId: this.selected.humanId,
@@ -924,7 +944,7 @@
         leftControl: "p1",
         rightControl: "ai",
         modeId: this.selected.matchMode,
-        leftPaddleType: this.selected.p1Paddle,
+        leftPaddleType: DEFAULT_PADDLE_TYPE,
         rightPaddleType: DEFAULT_PADDLE_TYPE,
         rightDifficulty: this.selected.aiDifficulty
       });
@@ -933,6 +953,7 @@
     startDuelMatch() {
       if (this.selected.p1Id === "machine") this.selected.p1Id = "francisco";
       if (this.selected.p2Id === "machine") this.selected.p2Id = this.firstDuelPlayerIdExcept(this.selected.p1Id);
+      this.resetStartingPaddleSelection("match");
       this.startMatchIntro({
         kind: "duel",
         leftPlayerId: this.selected.p1Id,
@@ -940,13 +961,16 @@
         leftControl: "p1",
         rightControl: "p2",
         modeId: this.selected.matchMode,
-        leftPaddleType: this.selected.p1Paddle,
-        rightPaddleType: this.selected.p2Paddle
+        leftPaddleType: DEFAULT_PADDLE_TYPE,
+        rightPaddleType: DEFAULT_PADDLE_TYPE
       });
     }
 
     startMatchIntro(config) {
-      this.pendingMatchConfig = Object.assign({}, config);
+      this.pendingMatchConfig = Object.assign({}, config, {
+        leftPaddleType: DEFAULT_PADDLE_TYPE,
+        rightPaddleType: DEFAULT_PADDLE_TYPE
+      });
       this.homeButtonFocused = false;
       this.matchIntroFocus = "launch";
       this.screen = "matchIntro";
@@ -964,6 +988,7 @@
     }
 
     buildTournament() {
+      this.resetStartingPaddleSelection("tournament");
       const participants = this.normalizeTournamentParticipants();
       if (participants.length < 1) {
         this.message("Il faut au moins un joueur pour faire un tableau. Même absurde.", 2.6);
@@ -987,7 +1012,7 @@
         matches: bracket.rounds.flat(),
         modeId: this.selected.tournamentMode,
         aiDifficulty: this.selected.tournamentDifficulty,
-        paddleType: this.selected.tournamentPaddle,
+        paddleType: DEFAULT_PADDLE_TYPE,
         currentMatchId: null,
         currentPhase: "setup",
         status: "active",
@@ -1428,8 +1453,8 @@
         leftControl: leftIsMachine ? "ai" : "p1",
         rightControl: rightIsMachine ? "ai" : "p2",
         modeId: this.tournament.modeId,
-        leftPaddleType: leftIsMachine ? DEFAULT_PADDLE_TYPE : this.tournament.paddleType,
-        rightPaddleType: rightIsMachine ? DEFAULT_PADDLE_TYPE : this.tournament.paddleType,
+        leftPaddleType: DEFAULT_PADDLE_TYPE,
+        rightPaddleType: DEFAULT_PADDLE_TYPE,
         leftDifficulty: leftIsMachine ? "normal" : undefined,
         rightDifficulty: rightIsMachine ? "normal" : undefined,
         scoreToWin: CFG.SCORE_TO_WIN,

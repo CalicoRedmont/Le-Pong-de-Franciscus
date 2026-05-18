@@ -424,7 +424,7 @@ test("solo and duel matches show player faces before kickoff", () => {
     opponentId: "machine",
     matchMode: "speed",
     aiDifficulty: "easy",
-    p1Paddle: "round",
+    p1Paddle: "weird",
     p2Paddle: "triangle"
   };
 
@@ -433,12 +433,16 @@ test("solo and duel matches show player faces before kickoff", () => {
   assert.equal(game.pendingMatchConfig.kind, "solo");
   assert.equal(game.pendingMatchConfig.leftPlayerId, "francisco");
   assert.equal(game.pendingMatchConfig.rightPlayerId, "machine");
+  assert.equal(game.pendingMatchConfig.leftPaddleType, "round");
+  assert.equal(game.pendingMatchConfig.rightPaddleType, "round");
 
   game.startDuelMatch();
   assert.equal(game.screen, "matchIntro");
   assert.equal(game.pendingMatchConfig.kind, "duel");
   assert.equal(game.pendingMatchConfig.leftPlayerId, "francisco");
   assert.equal(game.pendingMatchConfig.rightPlayerId, "julien");
+  assert.equal(game.pendingMatchConfig.leftPaddleType, "round");
+  assert.equal(game.pendingMatchConfig.rightPaddleType, "round");
 
   let launchedConfig = null;
   game.beginMatch = config => {
@@ -450,6 +454,65 @@ test("solo and duel matches show player faces before kickoff", () => {
   assert.equal(game.screen, "play");
   assert.equal(launchedConfig.kind, "duel");
   assert.equal(game.pendingMatchConfig, null);
+});
+
+test("new solo duel and tournament starts force rounded rectangle keepers", () => {
+  const windowRef = loadGame(["francisco", "julien"]);
+  const game = Object.create(windowRef.Game.prototype);
+  game.audio = { play() {} };
+  game.message = () => {};
+  game.screen = "title";
+  game.selected = {
+    humanId: "francisco",
+    p1Id: "francisco",
+    p2Id: "julien",
+    opponentId: "machine",
+    matchMode: "speed",
+    aiDifficulty: "easy",
+    p1Paddle: "weird",
+    p2Paddle: "triangle",
+    tournamentMode: "speed",
+    tournamentDifficulty: "normal",
+    tournamentPaddle: "weird",
+    tournamentOpponents: ["julien"]
+  };
+  game.paddleCursor = 2;
+  game.playerCursor = 0;
+  game.tournamentCursor = 0;
+  game.setupCursor = 0;
+  game.tournamentSummaryMatchId = "";
+  game.tournamentBracketContext = "setup";
+  game.tournamentPhaseTransition = null;
+  game.tournamentChampionId = "";
+
+  game.startSoloFlow();
+  assert.equal(game.selected.p1Paddle, "round");
+  assert.equal(game.selected.p2Paddle, "round");
+
+  game.selected.p1Paddle = "triangle";
+  game.selected.p2Paddle = "weird";
+  game.startDuelFlow();
+  assert.equal(game.selected.p1Paddle, "round");
+  assert.equal(game.selected.p2Paddle, "round");
+
+  game.selected.tournamentPaddle = "weird";
+  game.startTournamentFlow();
+  assert.equal(game.selected.tournamentPaddle, "round");
+
+  game.selected.tournamentPaddle = "triangle";
+  game.buildTournament();
+  assert.equal(game.tournament.paddleType, "round");
+
+  let tournamentConfig = null;
+  game.beginMatch = config => {
+    tournamentConfig = config;
+    game.currentMatchConfig = config;
+    game.screen = "play";
+  };
+  game.startTournamentMatch();
+
+  assert.equal(tournamentConfig.leftPaddleType, "round");
+  assert.equal(tournamentConfig.rightPaddleType, "round");
 });
 
 test("match intro arrows can move focus between launch and home", () => {
