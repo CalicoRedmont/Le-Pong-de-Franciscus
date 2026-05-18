@@ -325,8 +325,8 @@ test("wargame sanctuary is GEOSTOCK", () => {
 
   assert.equal(sanctuary.id, "geostock");
   assert.equal(sanctuary.name, "GEOSTOCK");
-  assert.equal(sanctuary.displayName, "SANCTUARY: GEOSTOCK");
-  assert.equal(game.wargame.lastStatus, "SANCTUARY ONLINE: GEOSTOCK");
+  assert.equal(sanctuary.displayName, "GEOSTOCK");
+  assert.equal(game.wargame.lastStatus, "GEOSTOCK ONLINE");
 });
 
 test("wargame end restart button starts a fresh mission", () => {

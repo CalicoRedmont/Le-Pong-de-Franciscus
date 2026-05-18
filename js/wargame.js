@@ -49,7 +49,7 @@
     { id: "new_york", name: "New York", population: 18804000, x: 326, y: 286, labelDx: -18, labelDy: -22, labelAlign: "right", link: true },
     { id: "london", name: "Londres", population: 14800000, x: 428, y: 202, labelDx: -10, labelDy: -22, labelAlign: "right", link: true },
     { id: "paris", name: "Paris", population: 11000000, x: 548, y: 226, labelDx: 12, labelDy: -22, labelAlign: "left", link: true, lock: true },
-    { id: "geostock", name: "GEOSTOCK", displayName: "SANCTUARY: GEOSTOCK", population: 47293, x: 480, y: 300, type: "sanctuary", labelDx: 0, labelDy: 44, labelAlign: "center" },
+    { id: "geostock", name: "GEOSTOCK", displayName: "GEOSTOCK", population: 47293, x: 480, y: 300, type: "sanctuary", labelDx: 0, labelDy: 44, labelAlign: "center" },
     { id: "riyadh", name: "Riyadh", population: 7676654, x: 620, y: 306, labelDx: 12, labelDy: -22, labelAlign: "left", link: true },
     { id: "tokyo", name: "Tokyo", population: 42634827, x: 806, y: 286, labelDx: 0, labelDy: -24, labelAlign: "center", link: true, lock: true },
     { id: "sao_paulo", name: "São Paulo", population: 22429800, x: 314, y: 392, labelDx: -12, labelDy: -22, labelAlign: "right", link: true },
@@ -198,7 +198,7 @@
         heavyCooldown: 0,
         explosions: [],
         selectedPilot: this.resolveWarGameSelectedPilot(),
-        lastStatus: "SANCTUARY ONLINE: GEOSTOCK",
+        lastStatus: "GEOSTOCK ONLINE",
         lastStatusDetail: "",
         machineGlitch: 0,
         returningToTitle: false,
@@ -338,7 +338,7 @@
       const source = liveNodes[Math.floor(Math.random() * liveNodes.length)]
         || { x: clamp(target.x + Math.random() * 280 - 140, 84, this.width - 84), y: 92 };
       if (type === "standard" && isWarSanctuary(target)) {
-        state.lastStatus = "MACHINE: SANCTUARY TARGETED";
+        state.lastStatus = "MACHINE: GEOSTOCK TARGETED";
         state.lastStatusDetail = "";
       }
       if (type === "hunter") {
@@ -503,7 +503,7 @@
           state.victimFlash = 2.4;
           this.startWarVictimReport(target, cityVictims, previousVictims, state.victims);
           state.enemyMissiles.splice(i, 1);
-          state.lastStatus = sanctuary ? "SANCTUARY BREACHED: GEOSTOCK" : `${target.name.toUpperCase()} LOST`;
+          state.lastStatus = sanctuary ? "GEOSTOCK BREACHED" : `${target.name.toUpperCase()} LOST`;
           state.lastStatusDetail = formatWarVictims(cityVictims);
           this.addWarExplosion(target.x, target.y, this.colors.red, sanctuary ? 24 : 18);
           this.audio.play("lose");
@@ -1181,7 +1181,6 @@
         const labelY = city.y + (city.labelDy ?? (sanctuary ? 16 : -8));
         if (sanctuary) {
           this.drawWarLabelText(city.lost ? "GEOSTOCK LOST" : "GEOSTOCK", labelX, labelY, 10, color, "center");
-          this.drawWarLabelText("SANCTUARY", labelX, labelY + 18, 10, city.active ? this.colors.green : this.colors.red, "center");
         } else {
           this.drawWarLabelText(city.lost ? `${label} LOST` : label, labelX, labelY, 10, color, city.labelAlign || "left");
         }
@@ -1542,7 +1541,6 @@
         { label: "LOST ZONE", color: this.colors.red, kind: "box" },
         { label: "CRITICAL TARGET", color: this.colors.amber, kind: "box" },
         { label: "CITY / NODE", color: this.colors.green, kind: "circle" },
-        { label: "SANCTUARY", color: this.colors.green, kind: "double" },
         { label: "RADAR RANGE", color: this.colors.green, kind: "dash" }
       ];
       rows.forEach((row, index) => {
