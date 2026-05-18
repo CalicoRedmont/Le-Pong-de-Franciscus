@@ -1304,10 +1304,6 @@
       ctx.beginPath();
       ctx.arc(lineX + dir * 110, centerY, 4, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.setLineDash([6, 8]);
-      ctx.beginPath();
-      ctx.arc(lineX + dir * 116, centerY, 40, side === "left" ? -Math.PI / 2 : Math.PI / 2, side === "left" ? Math.PI / 2 : Math.PI * 1.5);
-      ctx.stroke();
       ctx.restore();
     };
 
