@@ -476,7 +476,8 @@ test("wargame ROPA collapse opens an executive replacement page with Bruno portr
   assert.equal(drawn.includes("Patrick Sulliot"), true);
   assert.equal(drawn.includes("est remplacé par"), true);
   assert.equal(drawn.includes("Bruno Paul-Dauphin"), true);
-  assert.equal(drawn.includes("Patrick Sulliot est remplacé par Bruno Paul-Dauphin"), true);
+  assert.equal(drawn.includes("En raison d'un ROPA < 1 %, Patrick Sulliot est remercié."), true);
+  assert.equal(drawn.includes("Patrick Sulliot est remplacé par Bruno Paul-Dauphin"), false);
   assert.equal(fs.existsSync(path.join(root, "assets/images/Bruno-Paul_Dauphin.png")), true);
 });
 

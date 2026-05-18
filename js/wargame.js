@@ -41,7 +41,8 @@
     executiveRestartDelay: 0.9,
     executivePortrait: "assets/images/Bruno-Paul_Dauphin.png",
     executiveReplacementName: "Bruno Paul-Dauphin",
-    executiveReplacementMessage: "Patrick Sulliot est remplacé par Bruno Paul-Dauphin"
+    executiveReplacementMessage: "Patrick Sulliot est remplacé par Bruno Paul-Dauphin",
+    executiveDismissalMessage: "En raison d'un ROPA < 1 %, Patrick Sulliot est remercié."
   };
   const WAR_RADAR = {
     left: 66,
@@ -2003,7 +2004,7 @@
       this.neon("Patrick Sulliot", this.width / 2, 350, 32, this.colors.green, "center");
       this.drawText("est remplacé par", this.width / 2, 386, 22, this.colors.white, "center");
       this.neon(WAR.executiveReplacementName, this.width / 2, 430, 36, this.colors.green, "center");
-      this.drawText(WAR.executiveReplacementMessage, this.width / 2, 474, 18, this.colors.amber, "center");
+      this.drawText(WAR.executiveDismissalMessage, this.width / 2, 474, 18, this.colors.amber, "center");
       this.drawWarGameRestartButton(this.warGameRestartButtonAlpha());
       ctx.restore();
     };
