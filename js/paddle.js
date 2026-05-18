@@ -5,7 +5,8 @@
     constructor(side, x, typeId, color) {
       this.side = side;
       this.x = x;
-      this.typeId = typeId || "round";
+      const defaultType = (window.BadPongConfig && window.BadPongConfig.DEFAULT_PADDLE_TYPE) || "round";
+      this.typeId = typeId || defaultType;
       this.color = color;
       this.baseSpeed = (window.BadPongConfig && window.BadPongConfig.PADDLE_BASE_SPEED) || 390;
       this.speed = this.baseSpeed;

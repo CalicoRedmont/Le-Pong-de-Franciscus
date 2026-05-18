@@ -39,6 +39,7 @@ function loadGame(playerIds) {
         MULTIBALL_INTERVAL_SECONDS: 20,
         ATTACKER_SPEEDUP_INTERVAL_SECONDS: 30,
         ATTACKER_SPEEDUP_MULTIPLIER: 1.3,
+        DEFAULT_PADDLE_TYPE: "round",
         PADDLE_TYPES: paddleTypes,
         playerById(id) {
           return byId.get(id) || players[0];
@@ -271,6 +272,16 @@ test("keeper styles expose fifty and one hundred percent speed bonuses", () => {
   assert.equal(JSON.stringify(config.PADDLE_TYPES.map(type => type.shapeLabel)), JSON.stringify(["NORMAL", "TRIANGULAIRE", "DEMI-CERCLE"]));
   assert.equal(numero10.impact({ y: numero10.cy }).speedFactor, 1.5);
   assert.equal(attaquant.impact({ y: attaquant.cy }).speedFactor, 2);
+});
+
+test("rounded rectangle keeper is the default shape", () => {
+  const config = loadTargets();
+  const Paddle = loadPaddleWithConfig(config);
+  const paddle = new Paddle("left", 50, undefined, "#39ff68");
+
+  assert.equal(config.DEFAULT_PADDLE_TYPE, "round");
+  assert.equal(config.PADDLE_TYPES[0].id, config.DEFAULT_PADDLE_TYPE);
+  assert.equal(paddle.typeId, "round");
 });
 
 test("attaquant style raises match speed by thirty percent every thirty seconds", () => {

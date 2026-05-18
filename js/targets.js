@@ -248,6 +248,7 @@
     { id: "normal", label: "CLASSIC", description: "Un ballon, cages ouvertes, dignité fermée." }
   ];
 
+  const DEFAULT_PADDLE_TYPE = "round";
   const PADDLE_TYPES = [
     { id: "round", label: "LIBÉRO", shapeLabel: "NORMAL", description: "Style compact, angles souples.", height: 72, width: 18, speedFactor: 1 },
     { id: "triangle", label: "NUMÉRO 10", shapeLabel: "TRIANGULAIRE", description: "Créatif et précis, +50% vitesse.", height: 70, width: 18, speedFactor: 1.5 },
@@ -397,6 +398,7 @@
     AI_DIFFICULTIES,
     AI_DIFFICULTY_IDS,
     MATCH_MODES,
+    DEFAULT_PADDLE_TYPE,
     PADDLE_TYPES,
     SCORE_TO_WIN,
     BASE_SPEED,

@@ -2,6 +2,7 @@
   "use strict";
 
   const CFG = window.BadPongConfig;
+  const DEFAULT_PADDLE_TYPE = CFG.DEFAULT_PADDLE_TYPE || "round";
 
   class Game {
     constructor(canvas) {
@@ -137,11 +138,11 @@
         opponentId: "machine",
         matchMode: "speed",
         aiDifficulty: "easy",
-        p1Paddle: "round",
-        p2Paddle: "round",
+        p1Paddle: DEFAULT_PADDLE_TYPE,
+        p2Paddle: DEFAULT_PADDLE_TYPE,
         tournamentMode: "speed",
         tournamentDifficulty: "normal",
-        tournamentPaddle: "round",
+        tournamentPaddle: DEFAULT_PADDLE_TYPE,
         tournamentOpponents: []
       };
       this.randomRoulette = {
@@ -154,8 +155,8 @@
     }
 
     resetMatchState() {
-      this.left = new window.Paddle("left", 50, "round", this.colors.green);
-      this.right = new window.Paddle("right", this.width - 70, "round", this.colors.red);
+      this.left = new window.Paddle("left", 50, DEFAULT_PADDLE_TYPE, this.colors.green);
+      this.right = new window.Paddle("right", this.width - 70, DEFAULT_PADDLE_TYPE, this.colors.red);
       this.left.power = 0;
       this.right.power = 0;
       this.leftPlayer = CFG.playerById("francisco");
@@ -885,8 +886,8 @@
       this.scoreToWin = config.scoreToWin || CFG.SCORE_TO_WIN;
       this.leftPlayer = this.resolvePlayerForMatch(config.leftPlayerId);
       this.rightPlayer = this.resolvePlayerForMatch(config.rightPlayerId);
-      this.left = new window.Paddle("left", 50, config.leftPaddleType || "round", this.colors.green);
-      this.right = new window.Paddle("right", this.width - 70, config.rightPaddleType || "round", this.colors.red);
+      this.left = new window.Paddle("left", 50, config.leftPaddleType || DEFAULT_PADDLE_TYPE, this.colors.green);
+      this.right = new window.Paddle("right", this.width - 70, config.rightPaddleType || DEFAULT_PADDLE_TYPE, this.colors.red);
       this.left.power = 0;
       this.right.power = 0;
       this.leftControl = config.leftControl || "p1";
@@ -924,7 +925,7 @@
         rightControl: "ai",
         modeId: this.selected.matchMode,
         leftPaddleType: this.selected.p1Paddle,
-        rightPaddleType: "round",
+        rightPaddleType: DEFAULT_PADDLE_TYPE,
         rightDifficulty: this.selected.aiDifficulty
       });
     }
@@ -1427,8 +1428,8 @@
         leftControl: leftIsMachine ? "ai" : "p1",
         rightControl: rightIsMachine ? "ai" : "p2",
         modeId: this.tournament.modeId,
-        leftPaddleType: leftIsMachine ? "round" : this.tournament.paddleType,
-        rightPaddleType: rightIsMachine ? "round" : this.tournament.paddleType,
+        leftPaddleType: leftIsMachine ? DEFAULT_PADDLE_TYPE : this.tournament.paddleType,
+        rightPaddleType: rightIsMachine ? DEFAULT_PADDLE_TYPE : this.tournament.paddleType,
         leftDifficulty: leftIsMachine ? "normal" : undefined,
         rightDifficulty: rightIsMachine ? "normal" : undefined,
         scoreToWin: CFG.SCORE_TO_WIN,

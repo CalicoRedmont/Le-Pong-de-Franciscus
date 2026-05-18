@@ -410,8 +410,9 @@
       const left = this.resolvePlayerForMatch(config.leftPlayerId);
       const right = this.resolvePlayerForMatch(config.rightPlayerId);
       const mode = CFG.matchModeById(config.modeId || "speed");
-      const leftStyle = CFG.paddleTypeById(config.leftPaddleType || "round");
-      const rightStyle = CFG.paddleTypeById(config.rightPaddleType || "round");
+      const defaultPaddle = CFG.DEFAULT_PADDLE_TYPE || "round";
+      const leftStyle = CFG.paddleTypeById(config.leftPaddleType || defaultPaddle);
+      const rightStyle = CFG.paddleTypeById(config.rightPaddleType || defaultPaddle);
       const solo = config.kind === "solo";
 
       this.fillBackground();
