@@ -346,6 +346,20 @@ test("wargame end restart button starts a fresh mission", () => {
 
   assert.equal(game.screen, "wargameGameOver");
   assert.equal(game.wargame.gameOver, true);
+  assert.equal(game.wargame.gameOverElapsed, 0);
+  assert.equal(game.warGameRestartButtonAlpha(), 0);
+
+  game.handleWarGameEndPointer(480, 384);
+  assert.equal(game.screen, "wargameGameOver");
+
+  game.handleWarGameKey("Enter", () => {});
+  assert.equal(game.screen, "wargameGameOver");
+
+  game.updateWarGameGameOver(4.6);
+  assert.equal(game.warGameRestartButtonReady(), true);
+  assert.ok(game.warGameRestartButtonAlpha() > 0);
+  assert.ok(game.warGameRestartButtonAlpha() < 1);
+
   game.handleWarGameEndPointer(480, 384);
 
   assert.equal(game.screen, "wargame");

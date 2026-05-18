@@ -32,7 +32,9 @@
     radarSampleVolume: 0.32,
     humanityLoss: 14,
     sanctuaryHumanityLoss: 25,
-    coreHp: 6
+    coreHp: 6,
+    gameOverRestartDelay: 4,
+    gameOverRestartFadeDuration: 1.2
   };
   const WAR_RADAR = {
     left: 66,
@@ -105,6 +107,7 @@
       const safeDt = Math.min(0.033, dt);
       if (this.screen === "wargameBoot") return this.updateWarGameBoot(safeDt);
       if (this.screen === "wargame") return this.updateWarGame(safeDt);
+      if (this.screen === "wargameGameOver") return this.updateWarGameGameOver(safeDt);
       return baseUpdate.call(this, dt);
     };
 
@@ -189,6 +192,7 @@
         radarPingTimer: 0.85,
         gameOver: false,
         gameOverReason: "",
+        gameOverElapsed: 0,
         pendingGameOverReason: "",
         victory: false,
         spawnGrace: 3,
@@ -228,7 +232,7 @@
       if (key === CFG.SOUND_TOGGLE_KEY || key === "f") return baseHandle.call(this, key);
       if (this.screen === "wargameGameOver" || this.screen === "wargameVictory") {
         if (key === "Enter" || key === " " || key === "r") {
-          this.restartWarGame();
+          if (this.warGameRestartButtonReady()) this.restartWarGame();
           return;
         }
         if (key === "Escape") {
@@ -285,6 +289,11 @@
       this.updateWarGameProjectiles(dt);
       this.updateWarGameExplosions(dt);
       this.checkWarGameEndStates();
+    };
+
+    Game.prototype.updateWarGameGameOver = function (dt) {
+      if (!this.wargame) return;
+      this.wargame.gameOverElapsed = (this.wargame.gameOverElapsed || 0) + dt;
     };
 
     Game.prototype.updateWarGamePlayer = function (dt) {
@@ -624,6 +633,7 @@
       const state = this.wargame;
       state.gameOver = true;
       state.gameOverReason = reason;
+      state.gameOverElapsed = 0;
       state.playerAircraft.destroyed = true;
       state.enemyMissiles.length = 0;
       state.playerShots.length = 0;
@@ -1432,11 +1442,11 @@
       const corePct = Math.max(0, Math.round((state.machineCore.hp / state.machineCore.maxHp) * 100));
       this.drawWarHudPanel(12, 12, 286, 146);
       this.drawText("WARGAME.EXE", 30, 38, 17, this.colors.green);
-      this.drawWarPilotPortrait(pilot, 30, 54, 78, 72);
-      this.drawText("PILOT", 122, 64, 10, this.colors.amber);
-      this.drawText(pilotName, 122, 84, 14, this.colors.white);
-      this.drawText(`CALLSIGN: ${callsign}`, 122, 104, 10, this.colors.white);
-      this.drawText("AIRCRAFT: PEACEKEEPER-50", 122, 124, 10, this.colors.white);
+      this.drawWarPilotPortrait(pilot, 28, 54, 88, 82);
+      this.drawText("PILOT", 132, 64, 10, this.colors.amber);
+      this.drawText(pilotName, 132, 84, 14, this.colors.white);
+      this.drawText(`CALLSIGN: ${callsign}`, 132, 104, 10, this.colors.white);
+      this.drawText("AIRCRAFT: PEACEKEEPER-50", 132, 124, 10, this.colors.white);
       this.drawText(`HUMANITY: ${Math.round(state.humanity)}%`, 30, 146, 11, state.humanity <= 25 ? this.colors.red : this.colors.green);
       this.drawText(`CITIES LOST: ${lost} / ${state.cities.length}`, 164, 146, 11, lost ? this.colors.red : this.colors.green);
 
@@ -1450,7 +1460,7 @@
       this.drawWarVictimCounter(346, 94, 270, 58, lost);
 
       this.drawWarHudPanel(662, 12, 286, 110);
-      this.drawWarMachinePortrait(machine, 856, 34, 70, 70, corePct);
+      this.drawWarMachinePortrait(machine, 850, 28, 84, 84, corePct);
       this.drawText("MACHINE", 680, 38, 15, this.colors.red);
       this.drawText("STATUS: ACTIVE", 680, 64, 11, this.colors.green);
       this.drawText(`CORE: ${corePct}%`, 680, 88, 12, corePct <= 30 ? this.colors.red : this.colors.amber);
@@ -1774,18 +1784,19 @@
       ctx.beginPath();
       ctx.rect(x + inset, y + inset, innerW, innerH);
       ctx.clip();
-      ctx.imageSmoothingEnabled = false;
-      ctx.filter = "grayscale(1) contrast(1.35) brightness(0.78) sepia(1) hue-rotate(58deg) saturate(3.2)";
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.filter = "grayscale(0.78) contrast(1.12) brightness(0.92) sepia(0.7) hue-rotate(58deg) saturate(2.2)";
       ctx.drawImage(img, ix, iy, iw, ih);
       ctx.filter = "none";
       ctx.globalCompositeOperation = "screen";
-      ctx.globalAlpha = 0.24;
+      ctx.globalAlpha = 0.14;
       ctx.fillStyle = tint;
       ctx.fillRect(x + inset, y + inset, innerW, innerH);
       ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 0.34;
+      ctx.globalAlpha = 0.18;
       ctx.fillStyle = "#000";
-      for (let yy = y + inset; yy < y + h - inset; yy += 4) ctx.fillRect(x + inset, yy, innerW, 1);
+      for (let yy = y + inset; yy < y + h - inset; yy += 5) ctx.fillRect(x + inset, yy, innerW, 1);
       if (glitch > 0) {
         ctx.globalAlpha = Math.min(0.68, glitch * 2.1);
         ctx.fillStyle = tint;
@@ -1808,7 +1819,7 @@
       } else {
         this.neon("GAME OVER", this.width / 2, 284, 72, this.colors.red, "center");
       }
-      this.drawWarGameRestartButton();
+      this.drawWarGameRestartButton(this.warGameRestartButtonAlpha());
       ctx.restore();
     };
 
@@ -1848,18 +1859,41 @@
       };
     };
 
-    Game.prototype.drawWarGameRestartButton = function () {
+    Game.prototype.warGameRestartButtonAlpha = function () {
+      if (this.screen !== "wargameGameOver") return 1;
+      const elapsed = this.wargame ? this.wargame.gameOverElapsed || 0 : 0;
+      return clamp(
+        (elapsed - WAR.gameOverRestartDelay) / WAR.gameOverRestartFadeDuration,
+        0,
+        1
+      );
+    };
+
+    Game.prototype.warGameRestartButtonReady = function () {
+      if (this.screen !== "wargameGameOver") return true;
+      const elapsed = this.wargame ? this.wargame.gameOverElapsed || 0 : 0;
+      return elapsed >= WAR.gameOverRestartDelay;
+    };
+
+    Game.prototype.drawWarGameRestartButton = function (alpha = 1) {
+      if (alpha <= 0) return;
+      const ctx = this.ctx;
       const button = this.warGameRestartButton();
+      ctx.save();
+      ctx.globalAlpha *= clamp(alpha, 0, 1);
       if (this.drawArcadeButton) {
         this.drawArcadeButton(button.x, button.y, button.w, button.h, button.label, this.colors.amber);
+        ctx.restore();
         return;
       }
-      this.ctx.strokeStyle = this.colors.amber;
-      this.ctx.strokeRect(button.x, button.y, button.w, button.h);
+      ctx.strokeStyle = this.colors.amber;
+      ctx.strokeRect(button.x, button.y, button.w, button.h);
       this.drawText(button.label, button.x + button.w / 2, button.y + 22, 13, this.colors.amber, "center");
+      ctx.restore();
     };
 
     Game.prototype.handleWarGameEndPointer = function (x, y) {
+      if (!this.warGameRestartButtonReady()) return true;
       const button = this.warGameRestartButton();
       if (warInside(x, y, button.x, button.y, button.w, button.h)) {
         this.restartWarGame();

@@ -23,7 +23,7 @@
     hubert: "Défense sobre. Regard de mur porteur.",
     louis: "Jeune prodige homologué par aucun comité.",
     olivier: "Tacle poli, frappe administrative.",
-    benjamin: "La précision chirurgicale, mais avec des crampons.",
+    benjamin: "Grand blond avec une chaussure... rien qu'une chaussure.",
     laureanne: "Le ballon hésite aussi.",
     pascal: "Libéro de terminal, relance au phosphore."
   };
