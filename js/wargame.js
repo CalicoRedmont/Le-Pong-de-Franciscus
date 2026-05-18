@@ -1881,6 +1881,7 @@
       if (state.gameOverReason === "humanity") {
         this.neon("ROPA COLLAPSED", this.width / 2, 242, 42, this.colors.red, "center");
         this.neon("GAME OVER", this.width / 2, 300, 58, this.colors.red, "center");
+        this.drawText("PATRICK KADRI IS FIRED", this.width / 2, 346, 18, this.colors.amber, "center");
       } else {
         this.neon("GAME OVER", this.width / 2, 284, 72, this.colors.red, "center");
       }

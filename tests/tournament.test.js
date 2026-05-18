@@ -415,6 +415,35 @@ test("wargame targets VINCI sites and tracks cost ROPA and executive change", ()
   assert.match(game.wargame.financeReport.executiveChange.message, /Patrick Sulliot démissionne/);
 });
 
+test("wargame ROPA collapse game over fires Patrick Kadri only on ROPA failure", () => {
+  const windowRef = loadWargameHarness();
+  const game = new windowRef.Game();
+  const drawn = [];
+  game.width = 960;
+  game.height = 540;
+  game.colors = { red: "#ff3855", amber: "#ffd04f", green: "#39ff68" };
+  game.ctx = {
+    save() {},
+    restore() {},
+    fillRect() {},
+    set fillStyle(value) {}
+  };
+  game.neon = text => drawn.push(text);
+  game.drawText = text => drawn.push(text);
+  game.drawWarGameRestartButton = () => {};
+  game.warGameRestartButtonAlpha = () => 0;
+
+  game.wargame = { gameOverReason: "humanity" };
+  game.drawWarGameGameOver();
+  assert.equal(drawn.includes("PATRICK KADRI IS FIRED"), true);
+
+  drawn.length = 0;
+  game.wargame = { gameOverReason: "aircraft" };
+  game.drawWarGameGameOver();
+  assert.equal(drawn.includes("PATRICK KADRI IS FIRED"), false);
+  assert.deepEqual(drawn, ["GAME OVER"]);
+});
+
 test("wargame end restart button starts a fresh mission", () => {
   const windowRef = loadWargameHarness();
   const game = new windowRef.Game();
