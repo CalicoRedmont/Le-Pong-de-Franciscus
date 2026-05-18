@@ -557,15 +557,15 @@
       const state = this.wargame;
       if (!state || state.executiveChanged) return null;
       if (previousRopa < WAR.ropaDangerThreshold || state.ropa >= WAR.ropaDangerThreshold) return null;
-      const replacement = this.randomWarExecutiveReplacement();
-      const replacementName = replacement ? replacement.name : "CALLSIGN FABIEN";
+      const replacement = { id: "bruno-paul-dauphin", name: "Bruno-Paul Dauphin" };
+      const replacementName = replacement.name;
       state.executiveChanged = true;
       state.executiveReplacement = replacement;
       state.president = replacementName;
       return {
         replacement,
         replacementName,
-        message: `Patrick Sulliot démissionne. ${replacementName} prend le relais.`
+        message: "Patrick Sulliot est remplacé par Bruno-Paul Dauphin."
       };
     };
 
@@ -1881,7 +1881,7 @@
       if (state.gameOverReason === "humanity") {
         this.neon("ROPA COLLAPSED", this.width / 2, 242, 42, this.colors.red, "center");
         this.neon("GAME OVER", this.width / 2, 300, 58, this.colors.red, "center");
-        this.drawText("PATRICK KADRI IS FIRED", this.width / 2, 346, 18, this.colors.amber, "center");
+        this.drawText("PATRICK SULLIOT EST REMPLACÉ PAR BRUNO-PAUL DAUPHIN", this.width / 2, 346, 16, this.colors.amber, "center");
       } else {
         this.neon("GAME OVER", this.width / 2, 284, 72, this.colors.red, "center");
       }

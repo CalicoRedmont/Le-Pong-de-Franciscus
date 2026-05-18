@@ -411,11 +411,11 @@ test("wargame targets VINCI sites and tracks cost ROPA and executive change", ()
   game.applyWarSiteLoss(spiecapag);
 
   assert.equal(game.wargame.executiveChanged, true);
-  assert.notEqual(game.wargame.president, "Patrick Sulliot");
-  assert.match(game.wargame.financeReport.executiveChange.message, /Patrick Sulliot démissionne/);
+  assert.equal(game.wargame.president, "Bruno-Paul Dauphin");
+  assert.equal(game.wargame.financeReport.executiveChange.message, "Patrick Sulliot est remplacé par Bruno-Paul Dauphin.");
 });
 
-test("wargame ROPA collapse game over fires Patrick Kadri only on ROPA failure", () => {
+test("wargame ROPA collapse game over replaces Patrick Sulliot only on ROPA failure", () => {
   const windowRef = loadWargameHarness();
   const game = new windowRef.Game();
   const drawn = [];
@@ -435,12 +435,12 @@ test("wargame ROPA collapse game over fires Patrick Kadri only on ROPA failure",
 
   game.wargame = { gameOverReason: "humanity" };
   game.drawWarGameGameOver();
-  assert.equal(drawn.includes("PATRICK KADRI IS FIRED"), true);
+  assert.equal(drawn.includes("PATRICK SULLIOT EST REMPLACÉ PAR BRUNO-PAUL DAUPHIN"), true);
 
   drawn.length = 0;
   game.wargame = { gameOverReason: "aircraft" };
   game.drawWarGameGameOver();
-  assert.equal(drawn.includes("PATRICK KADRI IS FIRED"), false);
+  assert.equal(drawn.includes("PATRICK SULLIOT EST REMPLACÉ PAR BRUNO-PAUL DAUPHIN"), false);
   assert.deepEqual(drawn, ["GAME OVER"]);
 });
 
@@ -578,6 +578,26 @@ test("new solo duel and tournament starts force rounded rectangle keepers", () =
 
   assert.equal(tournamentConfig.leftPaddleType, "round");
   assert.equal(tournamentConfig.rightPaddleType, "round");
+
+  game.selected.p1Paddle = "triangle";
+  game.selected.p2Paddle = "weird";
+  game.flow = "duel-setup";
+  game.setupCursor = 1;
+  game.changeSetupValue(1);
+  assert.equal(game.selected.p1Paddle, "round");
+  assert.equal(game.selected.p2Paddle, "round");
+
+  game.selected.p1Paddle = "triangle";
+  game.selected.p2Paddle = "weird";
+  game.setupCursor = 2;
+  game.changeSetupValue(1);
+  assert.equal(game.selected.p1Paddle, "round");
+  assert.equal(game.selected.p2Paddle, "round");
+
+  game.selected.tournamentPaddle = "weird";
+  game.setupCursor = 1;
+  game.changeTournamentSetup(1);
+  assert.equal(game.selected.tournamentPaddle, "round");
 });
 
 test("match intro arrows can move focus between launch and home", () => {

@@ -254,6 +254,13 @@
       }
     }
 
+    lockStartingPaddleSelection(scope = "match") {
+      this.resetStartingPaddleSelection(scope);
+      if (typeof this.message === "function") this.message("Début de partie : gardien rectangle arrondi obligatoire.", 1.8);
+      if (this.audio && this.audio.play) this.audio.play("menu");
+      return true;
+    }
+
     playerIndex(id) {
       return Math.max(0, CFG.PLAYERS.findIndex(player => player.id === id));
     }
@@ -2296,14 +2303,12 @@
         this.modeCursor = wrap(this.modeCursor + dir, CFG.MATCH_MODES.length);
         this.selected.matchMode = CFG.MATCH_MODES[this.modeCursor].id;
       } else if (this.setupCursor === 1) {
-        this.paddleCursor = wrap(this.paddleCursor + dir, CFG.PADDLE_TYPES.length);
-        this.selected.p1Paddle = CFG.PADDLE_TYPES[this.paddleCursor].id;
+        return this.lockStartingPaddleSelection("match");
       } else if (this.flow === "solo-setup") {
         this.aiDifficultyCursor = wrap(this.aiDifficultyCursor + dir, CFG.AI_DIFFICULTY_IDS.length);
         this.selected.aiDifficulty = CFG.AI_DIFFICULTY_IDS[this.aiDifficultyCursor];
       } else {
-        const idx = this.paddleIndex(this.selected.p2Paddle);
-        this.selected.p2Paddle = CFG.PADDLE_TYPES[wrap(idx + dir, CFG.PADDLE_TYPES.length)].id;
+        return this.lockStartingPaddleSelection("match");
       }
       this.audio.play("menu");
     }
@@ -2357,8 +2362,7 @@
         const idx = this.modeIndex(this.selected.tournamentMode);
         this.selected.tournamentMode = CFG.MATCH_MODES[wrap(idx + dir, CFG.MATCH_MODES.length)].id;
       } else if (this.setupCursor === 1) {
-        const idx = this.paddleIndex(this.selected.tournamentPaddle);
-        this.selected.tournamentPaddle = CFG.PADDLE_TYPES[wrap(idx + dir, CFG.PADDLE_TYPES.length)].id;
+        return this.lockStartingPaddleSelection("tournament");
       } else {
         this.message("Machines ajoutées automatiquement, simulations IA prêtes.", 1.8);
       }
