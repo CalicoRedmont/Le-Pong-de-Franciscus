@@ -809,24 +809,67 @@
         return false;
       }
       const now = ctx.currentTime;
+      this.playWarGameExplosionBitcrush(ctx, now);
       this.playWarGameExplosionNoise(ctx, now);
+      this.playWarGameExplosionDataBurst(ctx, now);
       this.playWarGameExplosionDrop(ctx, now);
       this.playWarGameExplosionCrackle(ctx, now);
       return true;
     };
 
-    Game.prototype.playWarGameExplosionNoise = function (ctx, now) {
-      const duration = 0.46;
+    Game.prototype.playWarGameExplosionBitcrush = function (ctx, now) {
+      const duration = 0.58;
       const length = Math.floor(ctx.sampleRate * duration);
       const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
       const data = buffer.getChannelData(0);
+      const hold = Math.max(1, Math.floor(ctx.sampleRate / 3600));
+      let held = 0;
+      for (let i = 0; i < length; i++) {
+        if (i % hold === 0) {
+          const raw = Math.random() * 2 - 1;
+          const clipped = Math.sign(raw) * Math.pow(Math.abs(raw), 0.36);
+          held = Math.round(clipped * 3) / 3;
+        }
+        const t = i / length;
+        const digitalGate = Math.floor(t * 70) % 3 === 0 ? 1 : 0.48;
+        const dropout = Math.floor(t * 17) % 7 === 0 ? 0.18 : 1;
+        data[i] = held * Math.pow(1 - t, 1.55) * digitalGate * dropout;
+      }
+      const source = ctx.createBufferSource();
+      const highpass = ctx.createBiquadFilter();
+      const lowpass = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      source.buffer = buffer;
+      highpass.type = "highpass";
+      highpass.frequency.setValueAtTime(520, now);
+      lowpass.type = "lowpass";
+      lowpass.frequency.setValueAtTime(4200, now);
+      lowpass.frequency.exponentialRampToValueAtTime(620, now + duration);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.2, now + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      source.connect(highpass);
+      highpass.connect(lowpass);
+      lowpass.connect(gain);
+      gain.connect(ctx.destination);
+      source.start(now);
+      source.stop(now + duration + 0.02);
+    };
+
+    Game.prototype.playWarGameExplosionNoise = function (ctx, now) {
+      const duration = 0.5;
+      const length = Math.floor(ctx.sampleRate * duration);
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      let held = 0;
       for (let i = 0; i < length; i++) {
         const t = i / length;
-        const gate = Math.floor(t * 42) % 2 === 0 ? 1 : 0.35;
-        const decay = Math.pow(1 - t, 2.1);
-        const raw = Math.random() * 2 - 1;
-        const stepped = Math.round(raw * 5) / 5;
-        data[i] = stepped * decay * gate;
+        if (i % 7 === 0) held = Math.random() * 2 - 1;
+        const gate = Math.floor(t * 52) % 2 === 0 ? 1 : 0.18;
+        const decay = Math.pow(1 - t, 1.8);
+        const raw = ((Math.random() * 2 - 1) * 0.45 + held * 0.9);
+        const stepped = Math.round(raw * 4) / 4;
+        data[i] = Math.max(-1, Math.min(1, stepped)) * decay * gate;
       }
       const noise = ctx.createBufferSource();
       const filter = ctx.createBiquadFilter();
@@ -844,6 +887,35 @@
       gain.connect(ctx.destination);
       noise.start(now);
       noise.stop(now + duration + 0.02);
+    };
+
+    Game.prototype.playWarGameExplosionDataBurst = function (ctx, now) {
+      [
+        { offset: 0.012, start: 4200, end: 860, duration: 0.07, volume: 0.055 },
+        { offset: 0.052, start: 2700, end: 5300, duration: 0.052, volume: 0.048 },
+        { offset: 0.115, start: 5100, end: 1200, duration: 0.075, volume: 0.046 },
+        { offset: 0.205, start: 1800, end: 3900, duration: 0.065, volume: 0.036 },
+        { offset: 0.31, start: 3600, end: 740, duration: 0.09, volume: 0.03 }
+      ].forEach(burst => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(burst.start, now + burst.offset);
+        osc.frequency.exponentialRampToValueAtTime(burst.end, now + burst.offset + burst.duration);
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(Math.max(burst.start, burst.end), now + burst.offset);
+        filter.Q.setValueAtTime(18, now + burst.offset);
+        gain.gain.setValueAtTime(0.0001, now + burst.offset);
+        gain.gain.exponentialRampToValueAtTime(burst.volume, now + burst.offset + 0.003);
+        gain.gain.setValueAtTime(burst.volume * 0.22, now + burst.offset + burst.duration * 0.46);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + burst.offset + burst.duration);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + burst.offset);
+        osc.stop(now + burst.offset + burst.duration + 0.02);
+      });
     };
 
     Game.prototype.playWarGameExplosionDrop = function (ctx, now) {
@@ -867,18 +939,18 @@
     };
 
     Game.prototype.playWarGameExplosionCrackle = function (ctx, now) {
-      [0.03, 0.09, 0.16, 0.24].forEach((offset, index) => {
+      [0.018, 0.044, 0.072, 0.11, 0.16, 0.24, 0.34].forEach((offset, index) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         const filter = ctx.createBiquadFilter();
         osc.type = "square";
-        osc.frequency.setValueAtTime(940 - index * 170, now + offset);
+        osc.frequency.setValueAtTime(1180 + (index % 3) * 520, now + offset);
         filter.type = "bandpass";
-        filter.frequency.setValueAtTime(720 + index * 260, now + offset);
-        filter.Q.setValueAtTime(12, now + offset);
+        filter.frequency.setValueAtTime(840 + index * 390, now + offset);
+        filter.Q.setValueAtTime(16, now + offset);
         gain.gain.setValueAtTime(0.0001, now + offset);
-        gain.gain.exponentialRampToValueAtTime(0.032, now + offset + 0.004);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.045);
+        gain.gain.exponentialRampToValueAtTime(0.045, now + offset + 0.003);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.038);
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(ctx.destination);

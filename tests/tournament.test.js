@@ -528,6 +528,10 @@ test("wargame red and homing missiles explode aircraft before game over", () => 
     assert.equal(game.wargame.aircraftExplosionActive, false);
     assert.equal(played.includes("lose"), true);
   }
+
+  const wargameSource = fs.readFileSync(path.join(root, "js/wargame.js"), "utf8");
+  assert.equal(wargameSource.includes("playWarGameExplosionBitcrush"), true);
+  assert.equal(wargameSource.includes("playWarGameExplosionDataBurst"), true);
 });
 
 test("wargame end restart button starts a fresh mission", () => {
