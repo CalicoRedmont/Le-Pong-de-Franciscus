@@ -316,6 +316,19 @@ test("wargame Olivier access skips identity check screen", () => {
   assert.equal(game.warGameBootLines().some(line => /IDENTITY/i.test(line)), false);
 });
 
+test("wargame sanctuary is GEOSTOCK", () => {
+  const windowRef = loadWargameHarness();
+  const game = new windowRef.Game();
+
+  game.resetWarGameState();
+  const sanctuary = game.wargame.cities.find(city => city.type === "sanctuary");
+
+  assert.equal(sanctuary.id, "geostock");
+  assert.equal(sanctuary.name, "GEOSTOCK");
+  assert.equal(sanctuary.displayName, "SANCTUARY: GEOSTOCK");
+  assert.equal(game.wargame.lastStatus, "SANCTUARY ONLINE: GEOSTOCK");
+});
+
 test("wargame end restart button starts a fresh mission", () => {
   const windowRef = loadWargameHarness();
   const game = new windowRef.Game();
