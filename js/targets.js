@@ -22,7 +22,7 @@
     sandra: "Contrôle orienté vers la gloire et les ennuis.",
     hubert: "Défense sobre. Regard de mur porteur.",
     louis: "Jeune prodige homologué par aucun comité.",
-    olivier: "Tacle poli, frappe administrative.",
+    olivier: "Forfait le dimanche matin.",
     benjamin: "Grand blond avec une chaussure... rien qu'une chaussure.",
     laureanne: "Le ballon hésite aussi.",
     pascal: "Libéro de terminal, relance au phosphore."

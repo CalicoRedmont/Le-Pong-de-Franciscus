@@ -358,7 +358,10 @@
       this.drawPlayerGrid(entries, this.playerCursor, grid.x, grid.y, grid.cols, grid.tileW, grid.tileH);
       const picked = entries[this.playerCursor] || entries[0];
       this.drawSelectedCard(picked, side.x, side.y, side.w, selectedH);
-      if (this.flow === "solo") this.drawSoloMachineOpponent(side.x, side.y + selectedH + grid.gapY, side.w, machineH);
+      if (this.flow === "solo") {
+        const machineX = Math.round((this.width - side.w) / 2);
+        this.drawSoloMachineOpponent(machineX, side.y + selectedH + grid.gapY, side.w, machineH);
+      }
       this.drawScanlines();
       this.drawPlayerGridNames(entries, this.playerCursor, grid.x, grid.y, grid.cols, grid.tileW, grid.tileH);
     };
