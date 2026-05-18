@@ -17,6 +17,11 @@ function loadGame(playerIds) {
     baseId: id.startsWith("machine") ? "machine" : undefined,
     assetId: id.startsWith("machine") ? "machine" : id
   }));
+  const paddleTypes = [
+    { id: "round", label: "LIBÉRO", shapeLabel: "NORMAL", height: 72, width: 18, speedFactor: 1 },
+    { id: "triangle", label: "NUMÉRO 10", shapeLabel: "TRIANGULAIRE", height: 70, width: 18, speedFactor: 1.5 },
+    { id: "weird", label: "ATTAQUANT", shapeLabel: "DEMI-CERCLE", height: 74, width: 18, speedFactor: 2 }
+  ];
   const byId = new Map(players.map(player => [player.id, player]));
   const context = {
     console,
@@ -34,6 +39,7 @@ function loadGame(playerIds) {
         MULTIBALL_INTERVAL_SECONDS: 20,
         ATTACKER_SPEEDUP_INTERVAL_SECONDS: 30,
         ATTACKER_SPEEDUP_MULTIPLIER: 1.3,
+        PADDLE_TYPES: paddleTypes,
         playerById(id) {
           return byId.get(id) || players[0];
         },
@@ -41,7 +47,7 @@ function loadGame(playerIds) {
           return { id, label: "TEST", description: "" };
         },
         paddleTypeById(id) {
-          return { id, label: "ROUND", description: "" };
+          return paddleTypes.find(type => type.id === id) || paddleTypes[0];
         }
       },
       BadPongStorage: {
@@ -387,6 +393,61 @@ test("solo and duel matches show player faces before kickoff", () => {
   assert.equal(game.screen, "play");
   assert.equal(launchedConfig.kind, "duel");
   assert.equal(game.pendingMatchConfig, null);
+});
+
+test("pause arrow keys select keeper shapes", () => {
+  const windowRef = loadGame(["francisco", "julien"]);
+  const game = Object.create(windowRef.Game.prototype);
+  game.audio = { play() {} };
+  game.message = () => {};
+  game.bounds = { top: 82, bottom: 506 };
+  game.leftControl = "p1";
+  game.rightControl = "p2";
+  game.selected = { p1Paddle: "round", p2Paddle: "round" };
+  game.currentMatchConfig = { leftPaddleType: "round", rightPaddleType: "round" };
+  game.left = {
+    typeId: "round",
+    setType(id) { this.typeId = id; },
+    clamp() {}
+  };
+  game.right = {
+    typeId: "round",
+    setType(id) { this.typeId = id; },
+    clamp() {}
+  };
+
+  game.pauseKeeperRole = "p1";
+  game.handlePauseKey("ArrowRight");
+  assert.equal(game.left.typeId, "triangle");
+  assert.equal(game.selected.p1Paddle, "triangle");
+  assert.equal(game.currentMatchConfig.leftPaddleType, "triangle");
+
+  game.handlePauseKey("ArrowDown");
+  assert.equal(game.pauseKeeperRole, "p2");
+  game.handlePauseKey("ArrowRight");
+  assert.equal(game.right.typeId, "triangle");
+  assert.equal(game.selected.p2Paddle, "triangle");
+  assert.equal(game.currentMatchConfig.rightPaddleType, "triangle");
+
+  game.handlePauseKey("ArrowLeft");
+  assert.equal(game.right.typeId, "round");
+});
+
+test("pause arrow keys are handled before home button focus", () => {
+  const windowRef = loadGame(["francisco", "julien"]);
+  const game = Object.create(windowRef.Game.prototype);
+  let handledKey = "";
+  game.screen = "pause";
+  game.waitingControl = null;
+  game.tournamentExitPrompt = null;
+  game.handlePauseKey = key => { handledKey = key; };
+  game.handleHomeButtonKey = () => {
+    throw new Error("home focus should not intercept pause arrows");
+  };
+
+  game.handleKeyDown("ArrowRight");
+
+  assert.equal(handledKey, "ArrowRight");
 });
 
 test("football goal line scores only through the goal mouth", () => {

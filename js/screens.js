@@ -1530,7 +1530,7 @@
       if (this.sideForRole && this.sideForRole("p1")) hints.push("1 : J1 suivant");
       if (this.sideForRole && this.sideForRole("p2")) hints.push("2 : J2 suivant");
       if (this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) hints.push("Entrée/T : tableau");
-      this.drawText("Clique une forme   Espace : reprendre   R replay   Échap quitter", 480, 488, 13, this.colors.amber, "center");
+      this.drawText("← → forme   ↑ ↓ joueur   Clique une forme   Espace : reprendre", 480, 488, 13, this.colors.amber, "center");
       this.drawText(hints.join("   "), 480, 516, 12, this.colors.white, "center");
       this.drawScanlines();
     };
@@ -1545,8 +1545,14 @@
       ctx.shadowColor = color;
       ctx.shadowBlur = button.selected ? 12 : 6;
       ctx.lineWidth = button.selected ? 2 : 1;
-      ctx.strokeRect(button.x, button.y, button.w, button.h);
       ctx.fillRect(button.x, button.y, button.w, button.h);
+      ctx.strokeRect(button.x, button.y, button.w, button.h);
+      if (button.focused) {
+        ctx.strokeStyle = this.colors.white;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeRect(button.x - 4, button.y - 4, button.w + 8, button.h + 8);
+      }
       ctx.restore();
 
       this.drawKeeperShapePreview(button.typeId, button.x + 18, button.y + 9, 30, 46, color, button.side);
