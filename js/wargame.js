@@ -546,7 +546,7 @@
           state.enemyMissiles.splice(i, 1);
           continue;
         }
-        if (missile.type === "hunter" && warCircleHit(missile, state.playerAircraft, missile.r + state.playerAircraft.r)) {
+        if (warCircleHit(missile, state.playerAircraft, missile.r + state.playerAircraft.r)) {
           this.addWarExplosion(state.playerAircraft.x, state.playerAircraft.y, this.colors.red, 24);
           this.startWarGameGameOver("aircraft");
           return;
