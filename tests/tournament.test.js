@@ -418,6 +418,9 @@ test("pause arrow keys select keeper shapes", () => {
 
   game.pauseKeeperRole = "p1";
   game.handlePauseKey("ArrowRight");
+  assert.equal(game.left.typeId, "round");
+  assert.equal(game.pauseKeeperFocusedType("p1"), "triangle");
+  game.handlePauseKey("Enter");
   assert.equal(game.left.typeId, "triangle");
   assert.equal(game.selected.p1Paddle, "triangle");
   assert.equal(game.currentMatchConfig.leftPaddleType, "triangle");
@@ -425,11 +428,17 @@ test("pause arrow keys select keeper shapes", () => {
   game.handlePauseKey("ArrowDown");
   assert.equal(game.pauseKeeperRole, "p2");
   game.handlePauseKey("ArrowRight");
+  assert.equal(game.right.typeId, "round");
+  assert.equal(game.pauseKeeperFocusedType("p2"), "triangle");
+  game.handlePauseKey("Enter");
   assert.equal(game.right.typeId, "triangle");
   assert.equal(game.selected.p2Paddle, "triangle");
   assert.equal(game.currentMatchConfig.rightPaddleType, "triangle");
 
   game.handlePauseKey("ArrowLeft");
+  assert.equal(game.pauseKeeperFocusedType("p2"), "round");
+  assert.equal(game.right.typeId, "triangle");
+  game.handlePauseKey("Enter");
   assert.equal(game.right.typeId, "round");
 });
 
@@ -448,6 +457,36 @@ test("pause arrow keys are handled before home button focus", () => {
   game.handleKeyDown("ArrowRight");
 
   assert.equal(handledKey, "ArrowRight");
+});
+
+test("pause up and down arrows can reach and leave the home button", () => {
+  const windowRef = loadGame(["francisco", "julien"]);
+  const game = Object.create(windowRef.Game.prototype);
+  game.audio = { play() {} };
+  game.message = () => {};
+  game.bounds = { top: 82, bottom: 506 };
+  game.leftControl = "p1";
+  game.rightControl = "p2";
+  game.selected = { p1Paddle: "round", p2Paddle: "round" };
+  game.currentMatchConfig = { leftPaddleType: "round", rightPaddleType: "round" };
+  game.left = {
+    typeId: "round",
+    setType(id) { this.typeId = id; },
+    clamp() {}
+  };
+  game.right = {
+    typeId: "round",
+    setType(id) { this.typeId = id; },
+    clamp() {}
+  };
+
+  game.pauseKeeperRole = "p1";
+  game.handlePauseKey("ArrowUp");
+  assert.equal(game.homeButtonFocused, true);
+
+  game.handlePauseKey("ArrowDown");
+  assert.equal(game.homeButtonFocused, false);
+  assert.equal(game.pauseKeeperRole, "p1");
 });
 
 test("football goal line scores only through the goal mouth", () => {

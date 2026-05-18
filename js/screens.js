@@ -1529,8 +1529,8 @@
       const hints = [];
       if (this.sideForRole && this.sideForRole("p1")) hints.push("1 : J1 suivant");
       if (this.sideForRole && this.sideForRole("p2")) hints.push("2 : J2 suivant");
-      if (this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) hints.push("Entrée/T : tableau");
-      this.drawText("← → forme   ↑ ↓ joueur   Clique une forme   Espace : reprendre", 480, 488, 13, this.colors.amber, "center");
+      if (this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) hints.push("T : tableau");
+      this.drawText("← → forme   Entrée valider   ↑ accueil / ↓ joueur   Espace reprendre", 480, 488, 13, this.colors.amber, "center");
       this.drawText(hints.join("   "), 480, 516, 12, this.colors.white, "center");
       this.drawScanlines();
     };

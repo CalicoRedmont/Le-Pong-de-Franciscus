@@ -127,6 +127,7 @@
       this.tournamentCursor = 0;
       this.commandsCursor = 0;
       this.pauseKeeperRole = "p1";
+      this.pauseKeeperShapeFocus = {};
       this.waitingControl = null;
       this.selected = {
         humanId: "francisco",
@@ -1467,6 +1468,7 @@
       }
       if (role === "p1") this.selected.p1Paddle = next.id;
       if (role === "p2") this.selected.p2Paddle = next.id;
+      this.setPauseKeeperFocusedType(role, next.id);
       this.message(`${role.toUpperCase()} gardien : ${next.shapeLabel || next.label}.`, 2);
       this.audio.play("menu");
       return true;
@@ -1486,17 +1488,73 @@
       return this.pauseKeeperRole;
     }
 
+    pauseKeeperCurrentType(role) {
+      const side = this.sideForRole(role);
+      const paddle = side === "left" ? this.left : this.right;
+      return paddle ? paddle.typeId : CFG.PADDLE_TYPES[0].id;
+    }
+
+    pauseKeeperFocusedType(role = this.pauseKeeperRole) {
+      const current = this.pauseKeeperCurrentType(role);
+      const focused = this.pauseKeeperShapeFocus && this.pauseKeeperShapeFocus[role];
+      return CFG.PADDLE_TYPES.some(type => type.id === focused) ? focused : current;
+    }
+
+    setPauseKeeperFocusedType(role, typeId) {
+      if (!this.pauseKeeperShapeFocus) this.pauseKeeperShapeFocus = {};
+      const type = CFG.paddleTypeById(typeId);
+      this.pauseKeeperShapeFocus[role] = type.id;
+      return type.id;
+    }
+
+    syncPauseKeeperFocus(role = this.pauseKeeperRole) {
+      const current = this.pauseKeeperCurrentType(role);
+      this.setPauseKeeperFocusedType(role, current);
+      return current;
+    }
+
     movePauseKeeperRole(dir) {
       const roles = this.pauseKeeperRoles();
       if (!roles.length) return false;
       const current = this.ensurePauseKeeperRole();
       const index = Math.max(0, roles.indexOf(current));
       this.pauseKeeperRole = roles[wrap(index + dir, roles.length)];
+      this.syncPauseKeeperFocus(this.pauseKeeperRole);
       this.audio.play("menu");
       return true;
     }
 
     changePauseKeeperShape(dir) {
+      const role = this.ensurePauseKeeperRole();
+      if (!role) return false;
+      const index = this.paddleIndex(this.pauseKeeperFocusedType(role));
+      const next = CFG.PADDLE_TYPES[wrap(index + dir, CFG.PADDLE_TYPES.length)];
+      this.setPauseKeeperFocusedType(role, next.id);
+      this.audio.play("menu");
+      return true;
+    }
+
+    validatePauseKeeperShape() {
+      const role = this.ensurePauseKeeperRole();
+      if (!role) return false;
+      return this.setRacketForRole(role, this.pauseKeeperFocusedType(role));
+    }
+
+    focusPauseHomeButton() {
+      this.homeButtonFocused = true;
+      this.audio.play("menu");
+      return true;
+    }
+
+    blurPauseHomeButton() {
+      this.homeButtonFocused = false;
+      this.ensurePauseKeeperRole();
+      this.syncPauseKeeperFocus(this.pauseKeeperRole);
+      this.audio.play("menu");
+      return true;
+    }
+
+    applyPauseKeeperShape(dir) {
       const role = this.ensurePauseKeeperRole();
       if (!role) return false;
       const side = this.sideForRole(role);
@@ -1525,6 +1583,7 @@
         const y = top + rowIndex * rowGap;
         CFG.PADDLE_TYPES.forEach((type, typeIndex) => {
           const selected = paddle && paddle.typeId === type.id;
+          const focusedType = this.pauseKeeperFocusedType(role);
           defs.push({
             action: `racket-${role}-${type.id}`,
             kind: "keeper-shape",
@@ -1535,7 +1594,7 @@
             typeId: type.id,
             label: type.shapeLabel || type.label,
             selected,
-            focused: this.pauseKeeperRole === role,
+            focused: !this.homeButtonFocused && this.pauseKeeperRole === role && focusedType === type.id,
             x: startX + roleW + typeIndex * (optionW + gap),
             y,
             w: optionW,
@@ -2299,6 +2358,8 @@
     handlePlayKey(key) {
       if (key === CFG.PAUSE_KEY) {
         this.ensurePauseKeeperRole();
+        this.syncPauseKeeperFocus(this.pauseKeeperRole);
+        this.homeButtonFocused = false;
         this.screen = "pause";
         this.audio.play("menu");
       } else if (key === "r") {
@@ -2314,20 +2375,43 @@
     }
 
     handlePauseKey(key) {
+      if (this.homeButtonFocused) {
+        if (key === "Enter") return this.goHome();
+        if (key === "ArrowDown" || key === "s") return this.blurPauseHomeButton();
+        if (key === "Escape") {
+          this.homeButtonFocused = false;
+          if (this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) this.goHome();
+          else this.quitMatch();
+          return;
+        }
+        if (key === CFG.PAUSE_KEY) {
+          this.homeButtonFocused = false;
+          this.screen = "play";
+          return;
+        }
+        return true;
+      }
+
       if (key === CFG.PAUSE_KEY) this.screen = "play";
       if (key === "ArrowLeft" || key === "q") return this.changePauseKeeperShape(-1);
       if (key === "ArrowRight" || key === "d") return this.changePauseKeeperShape(1);
-      if (key === "ArrowUp" || key === "z") return this.movePauseKeeperRole(-1);
+      if (key === "ArrowUp" || key === "z") {
+        const roles = this.pauseKeeperRoles();
+        const index = roles.indexOf(this.ensurePauseKeeperRole());
+        if (index <= 0) return this.focusPauseHomeButton();
+        return this.movePauseKeeperRole(-1);
+      }
       if (key === "ArrowDown" || key === "s") return this.movePauseKeeperRole(1);
+      if (key === "Enter") return this.validatePauseKeeperShape();
       if (key === "1") {
         this.pauseKeeperRole = "p1";
-        this.cycleRacketForRole("p1");
+        this.applyPauseKeeperShape(1);
       }
       if (key === "2") {
         this.pauseKeeperRole = "p2";
-        this.cycleRacketForRole("p2");
+        this.applyPauseKeeperShape(1);
       }
-      if ((key === "Enter" || key === "t") && this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) {
+      if (key === "t" && this.currentMatchConfig && this.currentMatchConfig.tournamentMatch) {
         this.showTournamentBracket("pause");
       }
       if (key === "r") this.restartCurrentMatch();
