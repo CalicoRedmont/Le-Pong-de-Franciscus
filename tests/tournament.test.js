@@ -411,11 +411,11 @@ test("wargame targets VINCI sites and tracks cost ROPA and executive change", ()
   game.applyWarSiteLoss(spiecapag);
 
   assert.equal(game.wargame.executiveChanged, true);
-  assert.equal(game.wargame.president, "Bruno-Paul Dauphin");
-  assert.equal(game.wargame.financeReport.executiveChange.message, "Patrick Sulliot est remplacé par Bruno-Paul Dauphin.");
+  assert.equal(game.wargame.president, "Bruno Paul-Dauphin");
+  assert.equal(game.wargame.financeReport.executiveChange.message, "Patrick Sulliot est remplacé par Bruno Paul-Dauphin.");
 });
 
-test("wargame ROPA collapse game over replaces Patrick Sulliot only on ROPA failure", () => {
+test("wargame ROPA collapse game over keeps replacement for the next page", () => {
   const windowRef = loadWargameHarness();
   const game = new windowRef.Game();
   const drawn = [];
@@ -435,13 +435,49 @@ test("wargame ROPA collapse game over replaces Patrick Sulliot only on ROPA fail
 
   game.wargame = { gameOverReason: "humanity" };
   game.drawWarGameGameOver();
-  assert.equal(drawn.includes("PATRICK SULLIOT EST REMPLACÉ PAR BRUNO-PAUL DAUPHIN"), true);
+  assert.equal(drawn.includes("PATRICK SULLIOT EST REMPLACÉ PAR BRUNO PAUL-DAUPHIN"), false);
+  assert.deepEqual(drawn, ["ROPA COLLAPSED", "GAME OVER"]);
 
   drawn.length = 0;
   game.wargame = { gameOverReason: "aircraft" };
   game.drawWarGameGameOver();
-  assert.equal(drawn.includes("PATRICK SULLIOT EST REMPLACÉ PAR BRUNO-PAUL DAUPHIN"), false);
   assert.deepEqual(drawn, ["GAME OVER"]);
+});
+
+test("wargame ROPA collapse opens an executive replacement page with Bruno portrait", () => {
+  const windowRef = loadWargameHarness();
+  const game = new windowRef.Game();
+  const drawn = [];
+  let portraitDrawn = false;
+  game.width = 960;
+  game.height = 540;
+  game.colors = { red: "#ff3855", amber: "#ffd04f", green: "#39ff68", greenSoft: "#177c37", white: "#effff2" };
+  game.ctx = {
+    save() {},
+    restore() {},
+    fillRect() {},
+    set fillStyle(value) {}
+  };
+  game.drawWarConsoleGrid = () => {};
+  game.drawWarExecutivePortrait = () => { portraitDrawn = true; };
+  game.neon = text => drawn.push(text);
+  game.drawText = text => drawn.push(text);
+  game.drawWarGameRestartButton = () => {};
+
+  game.resetWarGameState();
+  game.startWarGameGameOver("humanity");
+  game.updateWarGameGameOver(2.9);
+
+  assert.equal(game.screen, "wargameExecutiveChange");
+  assert.equal(game.wargame.president, "Bruno Paul-Dauphin");
+
+  game.drawWarGameExecutiveChange();
+  assert.equal(portraitDrawn, true);
+  assert.equal(drawn.includes("Patrick Sulliot"), true);
+  assert.equal(drawn.includes("est remplacé par"), true);
+  assert.equal(drawn.includes("Bruno Paul-Dauphin"), true);
+  assert.equal(drawn.includes("Patrick Sulliot est remplacé par Bruno Paul-Dauphin"), true);
+  assert.equal(fs.existsSync(path.join(root, "assets/images/Bruno-Paul_Dauphin.png")), true);
 });
 
 test("wargame end restart button starts a fresh mission", () => {

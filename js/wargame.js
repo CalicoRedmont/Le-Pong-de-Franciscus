@@ -36,7 +36,12 @@
     ropaDangerThreshold: 1,
     coreHp: 6,
     gameOverRestartDelay: 4,
-    gameOverRestartFadeDuration: 1.2
+    gameOverRestartFadeDuration: 1.2,
+    executivePageDelay: 2.8,
+    executiveRestartDelay: 0.9,
+    executivePortrait: "assets/images/Bruno-Paul_Dauphin.png",
+    executiveReplacementName: "Bruno Paul-Dauphin",
+    executiveReplacementMessage: "Patrick Sulliot est remplacé par Bruno Paul-Dauphin"
   };
   const WAR_RADAR = {
     left: 66,
@@ -83,6 +88,7 @@
       return this.screen === "wargameBoot"
         || this.screen === "wargame"
         || this.screen === "wargameGameOver"
+        || this.screen === "wargameExecutiveChange"
         || this.screen === "wargameVictory";
     };
 
@@ -98,6 +104,7 @@
       if (this.screen === "wargameBoot") return this.drawWarGameBoot();
       if (this.screen === "wargame") return this.drawWarGame();
       if (this.screen === "wargameGameOver") return this.drawWarGameGameOver();
+      if (this.screen === "wargameExecutiveChange") return this.drawWarGameExecutiveChange();
       if (this.screen === "wargameVictory") return this.drawWarGameVictory();
       return baseDraw.call(this);
     };
@@ -107,6 +114,7 @@
       if (this.screen === "wargameBoot") return this.updateWarGameBoot(safeDt);
       if (this.screen === "wargame") return this.updateWarGame(safeDt);
       if (this.screen === "wargameGameOver") return this.updateWarGameGameOver(safeDt);
+      if (this.screen === "wargameExecutiveChange") return this.updateWarGameExecutiveChange(safeDt);
       return baseUpdate.call(this, dt);
     };
 
@@ -117,7 +125,9 @@
     };
 
     Game.prototype.handlePointerDown = function (x, y) {
-      if (this.screen === "wargameGameOver" || this.screen === "wargameVictory") {
+      if (this.screen === "wargameGameOver"
+        || this.screen === "wargameExecutiveChange"
+        || this.screen === "wargameVictory") {
         return this.handleWarGameEndPointer(x, y);
       }
       if (this.isWarGameScreen()) return true;
@@ -160,6 +170,7 @@
     };
 
     Game.prototype.resetWarGameState = function () {
+      this.preloadWarExecutivePortrait();
       const cities = WAR_CITY_LAYOUT.map(createWarCity);
       const machineNodes = [
         createWarNode({ name: "ARCTIC SERVER", x: 486, y: 184, hp: 3 }),
@@ -201,6 +212,8 @@
         gameOver: false,
         gameOverReason: "",
         gameOverElapsed: 0,
+        executivePageElapsed: 0,
+        executivePageShown: false,
         pendingGameOverReason: "",
         victory: false,
         spawnGrace: 3,
@@ -238,7 +251,9 @@
 
     Game.prototype.handleWarGameKey = function (key, baseHandle) {
       if (key === CFG.SOUND_TOGGLE_KEY || key === "f") return baseHandle.call(this, key);
-      if (this.screen === "wargameGameOver" || this.screen === "wargameVictory") {
+      if (this.screen === "wargameGameOver"
+        || this.screen === "wargameExecutiveChange"
+        || this.screen === "wargameVictory") {
         if (key === "Enter" || key === " " || key === "r") {
           if (this.warGameRestartButtonReady()) this.restartWarGame();
           return;
@@ -302,6 +317,34 @@
     Game.prototype.updateWarGameGameOver = function (dt) {
       if (!this.wargame) return;
       this.wargame.gameOverElapsed = (this.wargame.gameOverElapsed || 0) + dt;
+      if (this.warGameShouldShowExecutivePage()
+        && this.wargame.gameOverElapsed >= WAR.executivePageDelay) {
+        this.startWarGameExecutiveChange();
+      }
+    };
+
+    Game.prototype.updateWarGameExecutiveChange = function (dt) {
+      if (!this.wargame) return;
+      this.wargame.executivePageElapsed = (this.wargame.executivePageElapsed || 0) + dt;
+    };
+
+    Game.prototype.warGameShouldShowExecutivePage = function () {
+      const state = this.wargame;
+      return !!state
+        && this.screen === "wargameGameOver"
+        && state.gameOverReason === "humanity"
+        && !state.executivePageShown;
+    };
+
+    Game.prototype.startWarGameExecutiveChange = function () {
+      const state = this.wargame;
+      if (!state) return;
+      this.applyWarExecutiveReplacement();
+      state.executivePageShown = true;
+      state.executivePageElapsed = 0;
+      this.preloadWarExecutivePortrait();
+      this.screen = "wargameExecutiveChange";
+      this.audio.play("menu");
     };
 
     Game.prototype.updateWarGamePlayer = function (dt) {
@@ -557,21 +600,21 @@
       const state = this.wargame;
       if (!state || state.executiveChanged) return null;
       if (previousRopa < WAR.ropaDangerThreshold || state.ropa >= WAR.ropaDangerThreshold) return null;
-      const replacement = { id: "bruno-paul-dauphin", name: "Bruno-Paul Dauphin" };
-      const replacementName = replacement.name;
-      state.executiveChanged = true;
-      state.executiveReplacement = replacement;
-      state.president = replacementName;
-      return {
-        replacement,
-        replacementName,
-        message: "Patrick Sulliot est remplacé par Bruno-Paul Dauphin."
-      };
+      return this.applyWarExecutiveReplacement();
     };
 
-    Game.prototype.randomWarExecutiveReplacement = function () {
-      const players = (CFG.PLAYERS || []).filter(player => player && player.id !== "machine");
-      return players.length ? randomItem(players) : null;
+    Game.prototype.applyWarExecutiveReplacement = function () {
+      const state = this.wargame;
+      if (!state) return null;
+      const replacement = { id: "bruno-paul-dauphin", name: WAR.executiveReplacementName };
+      state.executiveChanged = true;
+      state.executiveReplacement = replacement;
+      state.president = replacement.name;
+      return {
+        replacement,
+        replacementName: replacement.name,
+        message: `${WAR.executiveReplacementMessage}.`
+      };
     };
 
     Game.prototype.updateWarGameEnemyMissiles = function (dt) {
@@ -692,6 +735,8 @@
       state.gameOver = true;
       state.gameOverReason = reason;
       state.gameOverElapsed = 0;
+      state.executivePageElapsed = 0;
+      state.executivePageShown = false;
       state.playerAircraft.destroyed = true;
       state.enemyMissiles.length = 0;
       state.playerShots.length = 0;
@@ -1872,6 +1917,67 @@
       return true;
     };
 
+    Game.prototype.preloadWarExecutivePortrait = function () {
+      if (this.warExecutivePortrait) return this.warExecutivePortrait;
+      const asset = {
+        img: null,
+        loaded: false,
+        failed: false,
+        src: WAR.executivePortrait
+      };
+      this.warExecutivePortrait = asset;
+      const ImageCtor = window.Image || (typeof Image !== "undefined" ? Image : null);
+      if (!ImageCtor) {
+        asset.failed = true;
+        return asset;
+      }
+      const img = new ImageCtor();
+      img.onload = () => {
+        asset.img = img;
+        asset.loaded = true;
+        asset.failed = false;
+      };
+      img.onerror = () => {
+        asset.failed = true;
+      };
+      img.src = asset.src;
+      return asset;
+    };
+
+    Game.prototype.drawWarExecutivePortrait = function (x, y, size) {
+      const ctx = this.ctx;
+      const asset = this.preloadWarExecutivePortrait();
+      const center = x + size / 2;
+      const radius = size / 2;
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,0.92)";
+      ctx.beginPath();
+      ctx.arc(center, y + radius, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = this.colors.green;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = this.colors.green;
+      ctx.shadowBlur = 18;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(center, y + radius, radius - 5, 0, Math.PI * 2);
+      ctx.clip();
+      if (asset && asset.loaded && asset.img) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(asset.img, x, y, size, size);
+      } else {
+        ctx.fillStyle = "rgba(57,255,104,0.08)";
+        ctx.fillRect(x, y, size, size);
+        this.drawText("PORTRAIT", center, y + radius - 8, 18, this.colors.green, "center");
+        this.drawText("LOADING", center, y + radius + 18, 14, this.colors.greenSoft, "center");
+      }
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = "#000";
+      for (let yy = y; yy < y + size; yy += 6) ctx.fillRect(x, yy, size, 1);
+      ctx.restore();
+    };
+
     Game.prototype.drawWarGameGameOver = function () {
       const ctx = this.ctx;
       const state = this.wargame || { gameOverReason: "aircraft" };
@@ -1881,10 +1987,23 @@
       if (state.gameOverReason === "humanity") {
         this.neon("ROPA COLLAPSED", this.width / 2, 242, 42, this.colors.red, "center");
         this.neon("GAME OVER", this.width / 2, 300, 58, this.colors.red, "center");
-        this.drawText("PATRICK SULLIOT EST REMPLACÉ PAR BRUNO-PAUL DAUPHIN", this.width / 2, 346, 16, this.colors.amber, "center");
       } else {
         this.neon("GAME OVER", this.width / 2, 284, 72, this.colors.red, "center");
       }
+      this.drawWarGameRestartButton(this.warGameRestartButtonAlpha());
+      ctx.restore();
+    };
+
+    Game.prototype.drawWarGameExecutiveChange = function () {
+      const ctx = this.ctx;
+      ctx.save();
+      this.drawWarConsoleGrid(0.38);
+      this.drawText("EXECUTIVE SUCCESSION", this.width / 2, 58, 18, this.colors.amber, "center");
+      this.drawWarExecutivePortrait(370, 84, 220);
+      this.neon("Patrick Sulliot", this.width / 2, 350, 32, this.colors.green, "center");
+      this.drawText("est remplacé par", this.width / 2, 386, 22, this.colors.white, "center");
+      this.neon(WAR.executiveReplacementName, this.width / 2, 430, 36, this.colors.green, "center");
+      this.drawText(WAR.executiveReplacementMessage, this.width / 2, 474, 18, this.colors.amber, "center");
       this.drawWarGameRestartButton(this.warGameRestartButtonAlpha());
       ctx.restore();
     };
@@ -1916,9 +2035,14 @@
     };
 
     Game.prototype.warGameRestartButton = function () {
+      const y = this.screen === "wargameVictory"
+        ? 414
+        : this.screen === "wargameExecutiveChange"
+          ? 492
+          : 366;
       return {
         x: 350,
-        y: this.screen === "wargameVictory" ? 414 : 366,
+        y,
         w: 260,
         h: 36,
         label: "RECOMMENCER"
@@ -1926,6 +2050,14 @@
     };
 
     Game.prototype.warGameRestartButtonAlpha = function () {
+      if (this.screen === "wargameExecutiveChange") {
+        const elapsed = this.wargame ? this.wargame.executivePageElapsed || 0 : 0;
+        return clamp(
+          (elapsed - WAR.executiveRestartDelay) / WAR.gameOverRestartFadeDuration,
+          0,
+          1
+        );
+      }
       if (this.screen !== "wargameGameOver") return 1;
       const elapsed = this.wargame ? this.wargame.gameOverElapsed || 0 : 0;
       return clamp(
@@ -1936,6 +2068,10 @@
     };
 
     Game.prototype.warGameRestartButtonReady = function () {
+      if (this.screen === "wargameExecutiveChange") {
+        const elapsed = this.wargame ? this.wargame.executivePageElapsed || 0 : 0;
+        return elapsed >= WAR.executiveRestartDelay;
+      }
       if (this.screen !== "wargameGameOver") return true;
       const elapsed = this.wargame ? this.wargame.gameOverElapsed || 0 : 0;
       return elapsed >= WAR.gameOverRestartDelay;
