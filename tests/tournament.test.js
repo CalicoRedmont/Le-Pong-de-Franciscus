@@ -220,7 +220,7 @@ test("football players are generated from local portrait filenames", () => {
     "Julien",
     "Sandra",
     "Hubert",
-    "Louis",
+    "Louis-G",
     "Olivier",
     "Benjamin",
     "Pascal",

@@ -11,7 +11,7 @@ Exemples :
 - `Julien`
 - `Sandra`
 - `Hubert`
-- `Louis`
+- `Louis-G`
 - `Olivier`
 - `Patricia`
 - `Kamar`

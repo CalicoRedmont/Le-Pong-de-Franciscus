@@ -28,6 +28,7 @@
   const MACHINE_IMAGE_FILE = "La_Machine.jpg";
   const PLAYER_NAME_OVERRIDES = {
     Cecile: "Cécile",
+    Louis: "Louis-G",
     Louis_L: "Louis-L",
     Stephanie: "Stéphanie"
   };
@@ -37,7 +38,7 @@
     julien: "Pressing haut, lucidité basse, danger permanent.",
     sandra: "Contrôle orienté vers la gloire et les ennuis.",
     hubert: "Défense sobre. Regard de mur porteur.",
-    louis: "Jeune prodige homologué par aucun comité.",
+    louisg: "Jeune prodige homologué par aucun comité.",
     olivier: "Forfait le dimanche matin.",
     benjamin: "Grand blond avec une chaussure... rien qu'une chaussure.",
     pascal: "Libéro de terminal, relance au phosphore.",
@@ -60,7 +61,7 @@
     julien: "hard",
     sandra: "hard",
     hubert: "normal",
-    louis: "easy",
+    louisg: "easy",
     olivier: "normal",
     benjamin: "normal",
     pascal: "normal",
@@ -95,7 +96,7 @@
     julien: { shortProfile: "pressing nerveux", profile: "pressing nerveux", quote: PLAYER_LINES.julien },
     sandra: { shortProfile: "contrôle sec", profile: "contrôle sec", quote: PLAYER_LINES.sandra },
     hubert: { shortProfile: "mur porteur", profile: "mur porteur", quote: PLAYER_LINES.hubert },
-    louis: { shortProfile: "appel profond", profile: "appel profond", quote: PLAYER_LINES.louis },
+    louisg: { shortProfile: "appel profond", profile: "appel profond", quote: PLAYER_LINES.louisg },
     olivier: { shortProfile: "tacle poli", profile: "tacle poli", quote: PLAYER_LINES.olivier },
     benjamin: { shortProfile: "frappe nette", profile: "frappe nette", quote: PLAYER_LINES.benjamin },
     pascal: { shortProfile: "relance verte", profile: "relance verte", quote: PLAYER_LINES.pascal },

@@ -6,7 +6,7 @@
     "Julien",
     "Sandra",
     "Hubert",
-    "Louis",
+    "Louis-G",
     "Olivier",
     "Pascal",
     "Benjamin",
