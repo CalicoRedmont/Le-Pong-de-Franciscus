@@ -12,6 +12,7 @@
       else if (this.screen === "playerSelect") this.drawPlayerSelect();
       else if (this.screen === "opponentSelect") this.drawOpponentSelect();
       else if (this.screen === "setupSelect") this.drawSetupSelect();
+      else if (this.screen === "matchIntro") this.drawMatchIntro();
       else if (this.screen === "tournamentOpponents") this.drawTournamentOpponents();
       else if (this.screen === "tournamentSetup") this.drawTournamentSetup();
       else if (this.screen === "tournamentBracket") this.drawTournamentBracket();
@@ -404,6 +405,43 @@
       const right = duel ? CFG.playerById(this.selected.p2Id) : CFG.playerById(this.selected.opponentId);
       this.drawText(`${left.name}  VS  ${right.name}`, 480, 456, 18, this.colors.white, "center");
       this.drawScanlines();
+    };
+
+    Game.prototype.drawMatchIntro = function () {
+      const config = this.pendingMatchConfig;
+      if (!config) return this.drawSetupSelect();
+      const left = this.resolvePlayerForMatch(config.leftPlayerId);
+      const right = this.resolvePlayerForMatch(config.rightPlayerId);
+      const mode = CFG.matchModeById(config.modeId || "speed");
+      const leftStyle = CFG.paddleTypeById(config.leftPaddleType || "round");
+      const rightStyle = CFG.paddleTypeById(config.rightPaddleType || "round");
+      const solo = config.kind === "solo";
+
+      this.fillBackground();
+      this.drawFrame();
+      this.neon(solo ? "1 PLAYER" : "2 PLAYERS", 480, 62, 26, this.colors.green, "center");
+      this.drawText("FACE À FACE", 480, 98, 20, this.colors.amber, "center");
+
+      const portraitY = 126;
+      const portraitSize = 248;
+      this.drawMatchIntroPlayer(left, 82, portraitY, portraitSize, "JOUEUR 1", this.colors.green, leftStyle.label);
+      this.drawMatchIntroPlayer(right, 630, portraitY, portraitSize, solo ? "ADVERSAIRE" : "JOUEUR 2", this.colors.red, rightStyle.label);
+
+      this.neon("VS", 480, 256, 54, this.colors.white, "center");
+      this.drawText(mode.label, 480, 338, 18, this.colors.green, "center");
+      this.drawText(mode.description, 480, 366, 13, this.colors.white, "center");
+      this.drawText(`${left.name}  /  ${right.name}`, 480, 404, 18, this.colors.amber, "center");
+      this.drawArcadeButton(340, 456, 280, 38, "LANCER LE MATCH", this.colors.amber);
+      this.drawText("Entrée ou Espace : lancer   Échap : réglages", 480, 516, 13, this.colors.green, "center");
+      this.drawScanlines();
+    };
+
+    Game.prototype.drawMatchIntroPlayer = function (player, x, y, size, role, color, styleLabel) {
+      const labelY = y + size + 32;
+      this.drawPortrait(player, x, y, size, size, true);
+      this.drawText(role, x + size / 2, y - 18, 13, color, "center");
+      this.neon(player.name, x + size / 2, labelY, 22, color, "center");
+      this.drawText(styleLabel, x + size / 2, labelY + 30, 13, this.colors.white, "center");
     };
 
     Game.prototype.drawTournamentOpponents = function () {
@@ -1401,11 +1439,13 @@
       const boosted = !!shuttle.speedBoostActive;
       const color = boosted || speedRatio > 1.75 ? this.colors.amber : this.colors.green;
       const s = shuttle.r;
+      const scale = s / 12;
+      const trailSize = Math.max(4, Math.round(6 * scale));
       ctx.save();
       shuttle.trail.forEach((p, index) => {
         ctx.globalAlpha = 0.16 * (1 - index / Math.max(1, shuttle.trail.length));
         ctx.fillStyle = color;
-        ctx.fillRect(Math.round(p.x) - 3, Math.round(p.y) - 3, 6, 6);
+        ctx.fillRect(Math.round(p.x) - trailSize / 2, Math.round(p.y) - trailSize / 2, trailSize, trailSize);
       });
       ctx.globalAlpha = 1;
       ctx.translate(shuttle.x, shuttle.y);
@@ -1428,42 +1468,42 @@
 
       ctx.fillStyle = "rgba(1,2,1,0.96)";
       ctx.strokeStyle = color;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 3 * scale;
       ctx.beginPath();
       ctx.arc(0, 0, s, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = color;
-      ctx.fillRect(-3, -3, 6, 6);
+      ctx.fillRect(-3 * scale, -3 * scale, 6 * scale, 6 * scale);
       const patches = [
         [-9, -6, 5, 5],
         [5, -8, 5, 5],
         [-8, 5, 5, 5],
         [4, 5, 6, 5]
       ];
-      patches.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+      patches.forEach(([x, y, w, h]) => ctx.fillRect(x * scale, y * scale, w * scale, h * scale));
 
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 * scale;
       ctx.beginPath();
-      ctx.moveTo(-3, -3);
-      ctx.lineTo(-9, -6);
-      ctx.moveTo(3, -3);
-      ctx.lineTo(9, -8);
-      ctx.moveTo(-3, 3);
-      ctx.lineTo(-8, 9);
-      ctx.moveTo(3, 3);
-      ctx.lineTo(10, 8);
+      ctx.moveTo(-3 * scale, -3 * scale);
+      ctx.lineTo(-9 * scale, -6 * scale);
+      ctx.moveTo(3 * scale, -3 * scale);
+      ctx.lineTo(9 * scale, -8 * scale);
+      ctx.moveTo(-3 * scale, 3 * scale);
+      ctx.lineTo(-8 * scale, 9 * scale);
+      ctx.moveTo(3 * scale, 3 * scale);
+      ctx.lineTo(10 * scale, 8 * scale);
       ctx.stroke();
 
       ctx.strokeStyle = "rgba(239,255,242,0.72)";
-      ctx.lineWidth = 1;
+      ctx.lineWidth = Math.max(1, scale);
       ctx.beginPath();
-      ctx.arc(0, 0, s - 4, -0.2, Math.PI * 1.1);
+      ctx.arc(0, 0, s - 4 * scale, -0.2, Math.PI * 1.1);
       ctx.stroke();
       ctx.fillStyle = "rgba(239,255,242,0.75)";
-      ctx.fillRect(-s * 0.38, -s * 0.74, 4, 2);
+      ctx.fillRect(-s * 0.38, -s * 0.74, 4 * scale, 2 * scale);
       ctx.restore();
     };
 

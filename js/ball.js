@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  const FOOTBALL_RADIUS = 12 * 0.85;
+
   class Shuttle {
     constructor(x, y, dir, speed) {
       this.x = x;
@@ -9,7 +11,7 @@
       this.vy = (Math.random() - 0.5) * speed * 0.55;
       this.baseSpeed = speed;
       this.speedMultiplier = 1;
-      this.r = 12;
+      this.r = FOOTBALL_RADIUS;
       this.trail = [];
       this.safeTime = 0.35;
       this.prevX = x;

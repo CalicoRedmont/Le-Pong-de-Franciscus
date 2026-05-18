@@ -48,6 +48,7 @@
       this.tournamentSummaryMatchId = "";
       this.countdownKind = "start";
       this.homeButtonFocused = false;
+      this.pendingMatchConfig = null;
 
       this.menuIndex = 0;
       this.menuItems = [
@@ -193,6 +194,7 @@
       this.tournamentExitConfirmIndex = 0;
       this.tournamentPhaseTransition = null;
       this.tournamentSummaryMatchId = "";
+      this.pendingMatchConfig = null;
     }
 
     key(name) {
@@ -872,6 +874,7 @@
     }
 
     beginMatch(config) {
+      this.pendingMatchConfig = null;
       this.mode = config.kind || "solo";
       this.currentMatchConfig = Object.assign({}, config);
       this.currentMatchMode = CFG.matchModeById(config.modeId || "speed");
@@ -909,7 +912,7 @@
 
     startSoloMatch() {
       this.selected.opponentId = "machine";
-      this.beginMatch({
+      this.startMatchIntro({
         kind: "solo",
         leftPlayerId: this.selected.humanId,
         rightPlayerId: "machine",
@@ -925,7 +928,7 @@
     startDuelMatch() {
       if (this.selected.p1Id === "machine") this.selected.p1Id = "francisco";
       if (this.selected.p2Id === "machine") this.selected.p2Id = this.firstDuelPlayerIdExcept(this.selected.p1Id);
-      this.beginMatch({
+      this.startMatchIntro({
         kind: "duel",
         leftPlayerId: this.selected.p1Id,
         rightPlayerId: this.selected.p2Id,
@@ -935,6 +938,22 @@
         leftPaddleType: this.selected.p1Paddle,
         rightPaddleType: this.selected.p2Paddle
       });
+    }
+
+    startMatchIntro(config) {
+      this.pendingMatchConfig = Object.assign({}, config);
+      this.screen = "matchIntro";
+      const left = this.resolvePlayerForMatch(config.leftPlayerId);
+      const right = this.resolvePlayerForMatch(config.rightPlayerId);
+      this.message(`${left.name} vs ${right.name}. Les visages ont demandé le protocole.`, 2.4);
+      this.audio.play("validate");
+    }
+
+    launchPendingMatch() {
+      if (!this.pendingMatchConfig) return false;
+      const config = Object.assign({}, this.pendingMatchConfig);
+      this.beginMatch(config);
+      return true;
     }
 
     buildTournament() {
@@ -1412,7 +1431,10 @@
     }
 
     restartCurrentMatch() {
-      if (this.currentMatchConfig) this.beginMatch(this.currentMatchConfig);
+      if (this.currentMatchConfig) {
+        if (this.currentMatchConfig.tournamentMatch) this.beginMatch(this.currentMatchConfig);
+        else this.startMatchIntro(this.currentMatchConfig);
+      }
       else this.startTitle();
     }
 
@@ -1646,6 +1668,7 @@
       if (this.screen === "playerSelect") return this.handlePlayerSelectPointer(x, y);
       if (this.screen === "opponentSelect") return this.handleOpponentSelectPointer(x, y);
       if (this.screen === "setupSelect") return this.handleSetupPointer(x, y);
+      if (this.screen === "matchIntro") return this.handleMatchIntroPointer(x, y);
       if (this.screen === "tournamentOpponents") return this.handleTournamentOpponentsPointer(x, y);
       if (this.screen === "tournamentSetup") return this.handleTournamentSetupPointer(x, y);
       if (this.screen === "tournamentBracket") return this.handleTournamentBracketPointer(x, y);
@@ -1706,6 +1729,14 @@
         return true;
       }
       return false;
+    }
+
+    handleMatchIntroPointer(x, y) {
+      if (inside(x, y, 340, 456, 280, 38)) {
+        this.launchPendingMatch();
+        return true;
+      }
+      return true;
     }
 
     handleTournamentOpponentsPointer(x, y) {
@@ -1913,6 +1944,7 @@
       if (this.screen === "playerSelect") return this.handlePlayerSelectKey(key);
       if (this.screen === "opponentSelect") return this.handleOpponentSelectKey(key);
       if (this.screen === "setupSelect") return this.handleSetupKey(key);
+      if (this.screen === "matchIntro") return this.handleMatchIntroKey(key);
       if (this.screen === "tournamentOpponents") return this.handleTournamentOpponentsKey(key);
       if (this.screen === "tournamentSetup") return this.handleTournamentSetupKey(key);
       if (this.screen === "tournamentBracket") return this.handleTournamentBracketKey(key);
@@ -2054,6 +2086,17 @@
       if (key === "Enter") {
         if (this.flow === "solo-setup") this.startSoloMatch();
         else this.startDuelMatch();
+      }
+    }
+
+    handleMatchIntroKey(key) {
+      if (key === "Escape") {
+        this.screen = "setupSelect";
+        this.audio.play("menu");
+        return;
+      }
+      if (key === "Enter" || key === " ") {
+        this.launchPendingMatch();
       }
     }
 

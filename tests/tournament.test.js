@@ -77,6 +77,14 @@ function loadPaddleWithConfig(config) {
   return context.window.Paddle;
 }
 
+function loadBall() {
+  const context = { window: {}, Math };
+  vm.createContext(context);
+  const ballSource = fs.readFileSync(path.join(root, "js/ball.js"), "utf8");
+  vm.runInContext(ballSource, context);
+  return context.window.Shuttle;
+}
+
 function loadWargameHarness() {
   const players = [
     { id: "francisco", name: "Francisco", assetId: "francisco", difficulty: "normal" },
@@ -226,6 +234,13 @@ test("football match modes include multiballs", () => {
   assert.equal(config.matchModeById("multi").label, "MULTIBALLS");
 });
 
+test("football ball is fifteen percent smaller", () => {
+  const Shuttle = loadBall();
+  const shuttle = new Shuttle(480, 270, 1, 350);
+
+  assert.equal(Math.round(shuttle.r * 10), 102);
+});
+
 test("keeper styles expose fifty and one hundred percent speed bonuses", () => {
   const config = loadTargets();
   const Paddle = loadPaddleWithConfig(config);
@@ -317,6 +332,47 @@ test("wargame end restart button starts a fresh mission", () => {
   assert.equal(game.wargame.gameOver, false);
   assert.equal(game.wargame.humanity, 100);
   assert.equal(game.wargame.playerAircraft.destroyed, false);
+});
+
+test("solo and duel matches show player faces before kickoff", () => {
+  const windowRef = loadGame(["francisco", "julien"]);
+  const game = Object.create(windowRef.Game.prototype);
+  game.audio = { play() {} };
+  game.message = () => {};
+  game.resolvePlayerForMatch = id => ({ id, name: id.toUpperCase() });
+  game.selected = {
+    humanId: "francisco",
+    p1Id: "francisco",
+    p2Id: "julien",
+    opponentId: "machine",
+    matchMode: "speed",
+    aiDifficulty: "easy",
+    p1Paddle: "round",
+    p2Paddle: "triangle"
+  };
+
+  game.startSoloMatch();
+  assert.equal(game.screen, "matchIntro");
+  assert.equal(game.pendingMatchConfig.kind, "solo");
+  assert.equal(game.pendingMatchConfig.leftPlayerId, "francisco");
+  assert.equal(game.pendingMatchConfig.rightPlayerId, "machine");
+
+  game.startDuelMatch();
+  assert.equal(game.screen, "matchIntro");
+  assert.equal(game.pendingMatchConfig.kind, "duel");
+  assert.equal(game.pendingMatchConfig.leftPlayerId, "francisco");
+  assert.equal(game.pendingMatchConfig.rightPlayerId, "julien");
+
+  let launchedConfig = null;
+  game.beginMatch = config => {
+    launchedConfig = config;
+    game.pendingMatchConfig = null;
+    game.screen = "play";
+  };
+  game.handleMatchIntroKey("Enter");
+  assert.equal(game.screen, "play");
+  assert.equal(launchedConfig.kind, "duel");
+  assert.equal(game.pendingMatchConfig, null);
 });
 
 test("football goal line scores only through the goal mouth", () => {
