@@ -92,7 +92,8 @@ function loadBall() {
   return context.window.Shuttle;
 }
 
-function loadWargameHarness() {
+function loadWargameHarness(options = {}) {
+  const enableWargame = options.enableWargame ?? true;
   const players = [
     { id: "francisco", name: "Francisco", assetId: "francisco", difficulty: "normal" },
     { id: "olivier", name: "Olivier", assetId: "olivier", difficulty: "normal" },
@@ -108,7 +109,7 @@ function loadWargameHarness() {
     clearTimeout() {},
     window: {
       BadPongConfig: {
-        ENABLE_WARGAME: true,
+        ENABLE_WARGAME: enableWargame,
         SOUND_TOGGLE_KEY: "=",
         PLAYERS: players,
         playerById(id) {
@@ -343,6 +344,26 @@ test("wargame Olivier access skips identity check screen", () => {
   assert.equal(game.wargame.selectedPilot.displayName, "OLIVIER");
   assert.equal(windowRef.BadPongSession.playerId, "olivier");
   assert.equal(game.warGameBootLines().some(line => /IDENTITY/i.test(line)), false);
+});
+
+test("hidden title key 3 launches wargame boot", () => {
+  const windowRef = loadWargameHarness();
+  const game = new windowRef.Game();
+
+  game.handleKeyDown("3");
+
+  assert.equal(game.screen, "wargameBoot");
+  assert.equal(game.warGameBootLines().includes("LOADING WARGAME.EXE"), true);
+});
+
+test("hidden title key 3 respects disabled wargame flag", () => {
+  const windowRef = loadWargameHarness({ enableWargame: false });
+  const game = new windowRef.Game();
+
+  game.handleKeyDown("3");
+
+  assert.equal(game.screen, "title");
+  assert.equal(game.wargame, undefined);
 });
 
 test("wargame sanctuary is GEOSTOCK", () => {

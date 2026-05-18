@@ -131,6 +131,11 @@
 
     Game.prototype.captureWarGameUnlock = function (key) {
       if (!CFG.ENABLE_WARGAME || this.screen !== "title") return false;
+      if (key === "3") {
+        this.wargamePilotOverride = null;
+        this.startWarGameBoot();
+        return true;
+      }
       if (!key || key.length !== 1 || !/[a-z]/i.test(key)) return false;
       this.wargameUnlockBuffer = `${this.wargameUnlockBuffer || ""}${key.toUpperCase()}`.slice(-7);
       if (this.wargameUnlockBuffer === "OLIVIER") {
