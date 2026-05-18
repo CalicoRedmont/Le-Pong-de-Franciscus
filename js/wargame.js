@@ -30,6 +30,7 @@
     radarSample: "assets/sounds/wargame-sonar.wav",
     radarSampleSliceDuration: 0.95,
     radarSampleVolume: 0.32,
+    aircraftExplosionDelay: 0.72,
     humanityLoss: 14,
     sanctuaryHumanityLoss: 25,
     ropaInitial: 6.4,
@@ -213,6 +214,8 @@
         gameOver: false,
         gameOverReason: "",
         gameOverElapsed: 0,
+        aircraftExplosionActive: false,
+        aircraftExplosionElapsed: 0,
         executivePageElapsed: 0,
         executivePageShown: false,
         pendingGameOverReason: "",
@@ -299,6 +302,7 @@
       state.financeFlash = Math.max(0, state.financeFlash - dt);
       this.updateWarFinanceReport(dt);
       if (state.gameOver || state.victory) return;
+      if (state.aircraftExplosionActive) return this.updateWarGameAircraftExplosion(dt);
       this.updateWarGameRadarSound(dt);
 
       this.updateWarGamePlayer(dt);
@@ -327,6 +331,16 @@
     Game.prototype.updateWarGameExecutiveChange = function (dt) {
       if (!this.wargame) return;
       this.wargame.executivePageElapsed = (this.wargame.executivePageElapsed || 0) + dt;
+    };
+
+    Game.prototype.updateWarGameAircraftExplosion = function (dt) {
+      const state = this.wargame;
+      if (!state || !state.aircraftExplosionActive) return;
+      state.aircraftExplosionElapsed = (state.aircraftExplosionElapsed || 0) + dt;
+      this.updateWarGameExplosions(dt);
+      if (state.aircraftExplosionElapsed >= WAR.aircraftExplosionDelay) {
+        this.startWarGameGameOver("aircraft");
+      }
     };
 
     Game.prototype.warGameShouldShowExecutivePage = function () {
@@ -433,7 +447,7 @@
 
     Game.prototype.fireWarGameRapidShot = function () {
       const state = this.wargame;
-      if (state.rapidCooldown > 0 || state.gameOver || state.victory) return;
+      if (state.rapidCooldown > 0 || state.aircraftExplosionActive || state.gameOver || state.victory) return;
       const p = state.playerAircraft;
       state.playerShots.push({
         x: p.x,
@@ -452,7 +466,7 @@
 
     Game.prototype.fireWarGameHeavyMissile = function () {
       const state = this.wargame;
-      if (state.heavyCooldown > 0 || state.gameOver || state.victory) return;
+      if (state.heavyCooldown > 0 || state.aircraftExplosionActive || state.gameOver || state.victory) return;
       const target = this.nextWarGameNodeTarget();
       if (!target) return;
       const p = state.playerAircraft;
@@ -547,8 +561,7 @@
           continue;
         }
         if (warCircleHit(missile, state.playerAircraft, missile.r + state.playerAircraft.r)) {
-          this.addWarExplosion(state.playerAircraft.x, state.playerAircraft.y, this.colors.red, 24);
-          this.startWarGameGameOver("aircraft");
+          this.startWarAircraftExplosion();
           return;
         }
         if (missile.type === "standard" && missile.target && missile.target.active && warCircleHit(missile, missile.target, missile.r + 8)) {
@@ -736,6 +749,8 @@
       state.gameOver = true;
       state.gameOverReason = reason;
       state.gameOverElapsed = 0;
+      state.aircraftExplosionActive = false;
+      state.aircraftExplosionElapsed = 0;
       state.executivePageElapsed = 0;
       state.executivePageShown = false;
       state.playerAircraft.destroyed = true;
@@ -745,6 +760,29 @@
       this.stopWarGameRadarLoop();
       this.screen = "wargameGameOver";
       this.audio.play("lose");
+    };
+
+    Game.prototype.startWarAircraftExplosion = function () {
+      const state = this.wargame;
+      if (!state || state.aircraftExplosionActive || state.gameOver || state.victory) return;
+      const p = state.playerAircraft;
+      state.aircraftExplosionActive = true;
+      state.aircraftExplosionElapsed = 0;
+      p.destroyed = true;
+      p.vx = 0;
+      p.vy = 0;
+      p.fireFlash = 0;
+      p.thrustAlpha = 0;
+      state.enemyMissiles.length = 0;
+      state.playerShots.length = 0;
+      state.heavyMissiles.length = 0;
+      state.lastStatus = "PEACEKEEPER-50 LOST";
+      state.lastStatusDetail = "AIRCRAFT IMPACT";
+      this.addWarExplosion(p.x, p.y, this.colors.red, 30, { life: WAR.aircraftExplosionDelay + 0.12, grow: 56 });
+      this.addWarExplosion(p.x + 7, p.y - 5, this.colors.amber, 16, { life: 0.42, grow: 38 });
+      this.stopWarGameRadarLoop();
+      this.screen = "wargame";
+      this.audio.play("destroy");
     };
 
     Game.prototype.startWarGameVictory = function () {
@@ -758,8 +796,10 @@
       this.audio.play("win");
     };
 
-    Game.prototype.addWarExplosion = function (x, y, color, radius) {
-      this.wargame.explosions.push({ x, y, r: 3, maxR: radius, grow: radius * 2.4, life: 0.36, color });
+    Game.prototype.addWarExplosion = function (x, y, color, radius, options = {}) {
+      const life = options.life || 0.36;
+      const grow = options.grow || radius * 2.4;
+      this.wargame.explosions.push({ x, y, r: 3, maxR: radius, grow, life, color });
     };
 
     Game.prototype.playWarGameLockBeep = function (threat = 0) {
@@ -1398,6 +1438,7 @@
     Game.prototype.drawWarAircraft = function () {
       const ctx = this.ctx;
       const p = this.wargame.playerAircraft;
+      if (p.destroyed) return;
       const bankAngle = p.state === "bank_left" ? -0.18 : p.state === "bank_right" ? 0.18 : 0;
       ctx.save();
       ctx.translate(p.x, p.y);

@@ -481,35 +481,51 @@ test("wargame ROPA collapse opens an executive replacement page with Bruno portr
   assert.equal(fs.existsSync(path.join(root, "assets/images/Bruno-Paul_Dauphin.png")), true);
 });
 
-test("wargame red standard missiles destroy the aircraft on collision", () => {
+test("wargame red and homing missiles explode aircraft before game over", () => {
   const windowRef = loadWargameHarness();
-  const game = new windowRef.Game();
-  game.colors = { red: "#ff3855", amber: "#ffd04f", green: "#39ff68" };
+  for (const type of ["standard", "hunter"]) {
+    const game = new windowRef.Game();
+    const played = [];
+    game.audio = { play(sound) { played.push(sound); } };
+    game.colors = { red: "#ff3855", amber: "#ffd04f", green: "#39ff68" };
 
-  game.resetWarGameState();
-  const target = game.wargame.cities.find(site => site.id === "vcgp");
-  game.wargame.playerAircraft.x = 320;
-  game.wargame.playerAircraft.y = 260;
-  game.wargame.enemyMissiles.push({
-    type: "standard",
-    x: 320,
-    y: 260,
-    prevX: 320,
-    prevY: 260,
-    vx: 0,
-    vy: 0,
-    target,
-    r: 5,
-    life: 10
-  });
+    game.resetWarGameState();
+    game.screen = "wargame";
+    const target = game.wargame.cities.find(site => site.id === "vcgp");
+    game.wargame.playerAircraft.x = 320;
+    game.wargame.playerAircraft.y = 260;
+    game.wargame.enemyMissiles.push({
+      type,
+      x: 320,
+      y: 260,
+      prevX: 320,
+      prevY: 260,
+      vx: 0,
+      vy: 0,
+      target,
+      r: type === "hunter" ? 6 : 5,
+      life: 10
+    });
 
-  game.updateWarGameProjectiles(0.016);
+    game.updateWarGameProjectiles(0.016);
 
-  assert.equal(game.screen, "wargameGameOver");
-  assert.equal(game.wargame.gameOverReason, "aircraft");
-  assert.equal(game.wargame.playerAircraft.destroyed, true);
-  assert.equal(target.active, true);
-  assert.equal(game.wargame.costM, 0);
+    assert.equal(game.screen, "wargame", `${type} impact stays on WARGAME during explosion`);
+    assert.equal(game.wargame.aircraftExplosionActive, true);
+    assert.equal(game.wargame.gameOver, false);
+    assert.equal(game.wargame.playerAircraft.destroyed, true);
+    assert.equal(game.wargame.explosions.length >= 1, true);
+    assert.equal(played.includes("destroy"), true);
+    assert.equal(played.includes("lose"), false);
+    assert.equal(target.active, true);
+    assert.equal(game.wargame.costM, 0);
+
+    game.updateWarGameAircraftExplosion(0.8);
+
+    assert.equal(game.screen, "wargameGameOver");
+    assert.equal(game.wargame.gameOverReason, "aircraft");
+    assert.equal(game.wargame.aircraftExplosionActive, false);
+    assert.equal(played.includes("lose"), true);
+  }
 });
 
 test("wargame end restart button starts a fresh mission", () => {
