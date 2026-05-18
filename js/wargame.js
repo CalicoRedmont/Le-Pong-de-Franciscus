@@ -32,6 +32,8 @@
     radarSampleVolume: 0.32,
     humanityLoss: 14,
     sanctuaryHumanityLoss: 25,
+    ropaInitial: 6.4,
+    ropaDangerThreshold: 1,
     coreHp: 6,
     gameOverRestartDelay: 4,
     gameOverRestartFadeDuration: 1.2
@@ -47,16 +49,13 @@
     outerRadius: 222
   };
   const WAR_CITY_LAYOUT = [
-    { id: "montreal", name: "Montréal", population: 4291732, x: 222, y: 222, labelDx: -18, labelDy: -22, labelAlign: "right", link: true },
-    { id: "new_york", name: "New York", population: 18804000, x: 326, y: 286, labelDx: -18, labelDy: -22, labelAlign: "right", link: true },
-    { id: "london", name: "Londres", population: 14800000, x: 428, y: 202, labelDx: -10, labelDy: -22, labelAlign: "right", link: true },
-    { id: "paris", name: "Paris", population: 11000000, x: 548, y: 226, labelDx: 12, labelDy: -22, labelAlign: "left", link: true, lock: true },
-    { id: "geostock", name: "GEOSTOCK", displayName: "GEOSTOCK", population: 47293, x: 480, y: 300, type: "sanctuary", labelDx: 0, labelDy: 44, labelAlign: "center" },
-    { id: "riyadh", name: "Riyadh", population: 7676654, x: 620, y: 306, labelDx: 12, labelDy: -22, labelAlign: "left", link: true },
-    { id: "tokyo", name: "Tokyo", population: 42634827, x: 806, y: 286, labelDx: 0, labelDy: -24, labelAlign: "center", link: true, lock: true },
-    { id: "sao_paulo", name: "São Paulo", population: 22429800, x: 314, y: 392, labelDx: -12, labelDy: -22, labelAlign: "right", link: true },
-    { id: "cape_town", name: "Le Cap", population: 4778000, x: 560, y: 438, labelDx: 14, labelDy: -22, labelAlign: "left", link: true },
-    { id: "sydney", name: "Sydney", population: 5312000, x: 746, y: 430, labelDx: 0, labelDy: -22, labelAlign: "center", link: true }
+    { id: "vcgp", name: "VCGP", costM: 46, ropaLoss: 0.9, x: 222, y: 222, labelDx: -18, labelDy: -22, labelAlign: "right", link: true },
+    { id: "spiecapag", name: "Spiecapag", costM: 38, ropaLoss: 0.8, x: 326, y: 286, labelDx: -18, labelDy: -22, labelAlign: "right", link: true },
+    { id: "geocean", name: "Géocéan", costM: 30, ropaLoss: 0.7, x: 428, y: 202, labelDx: -10, labelDy: -22, labelAlign: "right", link: true },
+    { id: "geostock", name: "GEOSTOCK", displayName: "GEOSTOCK", costM: 64, ropaLoss: 1.6, x: 480, y: 300, type: "sanctuary", labelDx: 0, labelDy: 44, labelAlign: "center" },
+    { id: "entrepose", name: "Entrepose", costM: 42, ropaLoss: 0.9, x: 620, y: 306, labelDx: 12, labelDy: -22, labelAlign: "left", link: true },
+    { id: "vinci_construction", name: "VINCI Construction", costM: 70, ropaLoss: 1.2, x: 806, y: 286, labelDx: 0, labelDy: -24, labelAlign: "center", link: true, lock: true },
+    { id: "soletanche_bachy", name: "Soletanche Bachy", costM: 55, ropaLoss: 1.1, x: 314, y: 392, labelDx: -12, labelDy: -22, labelAlign: "right", link: true }
   ];
   const WAR_SCOPE_BLIPS = [
     { x: 156, y: 272, kind: "chevron" },
@@ -191,9 +190,13 @@
         machineNodes,
         machineCore: machineNodes.find(node => node.core),
         humanity: 100,
-        victims: 0,
-        victimFlash: 0,
-        victimReport: null,
+        ropa: WAR.ropaInitial,
+        costM: 0,
+        financeFlash: 0,
+        financeReport: null,
+        president: "Patrick Sulliot",
+        executiveChanged: false,
+        executiveReplacement: null,
         radarPingTimer: 0.85,
         gameOver: false,
         gameOverReason: "",
@@ -208,7 +211,7 @@
         explosions: [],
         selectedPilot: this.resolveWarGameSelectedPilot(),
         lastStatus: "GEOSTOCK ONLINE",
-        lastStatusDetail: "",
+        lastStatusDetail: `PRESIDENT: Patrick Sulliot`,
         machineGlitch: 0,
         returningToTitle: false,
         glitch: 0
@@ -277,8 +280,8 @@
       state.playerAircraft.fireFlash = Math.max(0, state.playerAircraft.fireFlash - dt);
       state.glitch = Math.max(0, state.glitch - dt);
       state.machineGlitch = Math.max(0, state.machineGlitch - dt);
-      state.victimFlash = Math.max(0, state.victimFlash - dt);
-      this.updateWarVictimReport(dt);
+      state.financeFlash = Math.max(0, state.financeFlash - dt);
+      this.updateWarFinanceReport(dt);
       if (state.gameOver || state.victory) return;
       this.updateWarGameRadarSound(dt);
 
@@ -506,23 +509,69 @@
         }
         if (missile.type === "standard" && missile.target && missile.target.active && warCircleHit(missile, missile.target, missile.r + 8)) {
           const target = missile.target;
-          const sanctuary = isWarSanctuary(target);
-          const humanityLoss = sanctuary ? WAR.sanctuaryHumanityLoss : WAR.humanityLoss;
-          target.active = false;
-          target.lost = true;
-          state.humanity = Math.max(0, state.humanity - humanityLoss);
-          const cityVictims = Math.max(0, Math.round(target.population || 0));
-          const previousVictims = state.victims;
-          state.victims += cityVictims;
-          state.victimFlash = 2.4;
-          this.startWarVictimReport(target, cityVictims, previousVictims, state.victims);
           state.enemyMissiles.splice(i, 1);
-          state.lastStatus = sanctuary ? "GEOSTOCK BREACHED" : `${target.name.toUpperCase()} LOST`;
-          state.lastStatusDetail = formatWarVictims(cityVictims);
-          this.addWarExplosion(target.x, target.y, this.colors.red, sanctuary ? 24 : 18);
+          this.applyWarSiteLoss(target);
           this.audio.play("lose");
         }
       }
+    };
+
+    Game.prototype.applyWarSiteLoss = function (target) {
+      const state = this.wargame;
+      const sanctuary = isWarSanctuary(target);
+      const humanityLoss = sanctuary ? WAR.sanctuaryHumanityLoss : WAR.humanityLoss;
+      const costM = Math.max(0, Math.round(target.costM || 0));
+      const previousCostM = state.costM;
+      const ropaLoss = Math.max(0, Number(target.ropaLoss) || 0);
+      const previousRopa = state.ropa;
+
+      target.active = false;
+      target.lost = true;
+      state.humanity = Math.max(0, state.humanity - humanityLoss);
+      state.costM += costM;
+      state.ropa = Math.max(0, state.ropa - ropaLoss);
+      state.financeFlash = 2.4;
+
+      const executiveChange = this.checkWarExecutiveChange(previousRopa);
+      this.startWarFinanceReport(target, {
+        costM,
+        totalFrom: previousCostM,
+        totalTo: state.costM,
+        ropaLoss,
+        previousRopa,
+        ropa: state.ropa,
+        executiveChange
+      });
+
+      state.lastStatus = sanctuary ? "GEOSTOCK BREACHED" : `${target.name.toUpperCase()} LOST`;
+      state.lastStatusDetail = `${formatWarCost(costM)} / ROPA -${formatWarRopaPoints(ropaLoss)}`;
+      if (executiveChange) {
+        state.lastStatus = "PATRICK SULLIOT DEMISSION";
+        state.lastStatusDetail = `${executiveChange.replacementName.toUpperCase()} PREND LE RELAIS`;
+      }
+      this.addWarExplosion(target.x, target.y, this.colors.red, sanctuary ? 24 : 18);
+      return executiveChange;
+    };
+
+    Game.prototype.checkWarExecutiveChange = function (previousRopa) {
+      const state = this.wargame;
+      if (!state || state.executiveChanged) return null;
+      if (previousRopa < WAR.ropaDangerThreshold || state.ropa >= WAR.ropaDangerThreshold) return null;
+      const replacement = this.randomWarExecutiveReplacement();
+      const replacementName = replacement ? replacement.name : "CALLSIGN FABIEN";
+      state.executiveChanged = true;
+      state.executiveReplacement = replacement;
+      state.president = replacementName;
+      return {
+        replacement,
+        replacementName,
+        message: `Patrick Sulliot démissionne. ${replacementName} prend le relais.`
+      };
+    };
+
+    Game.prototype.randomWarExecutiveReplacement = function () {
+      const players = (CFG.PLAYERS || []).filter(player => player && player.id !== "machine");
+      return players.length ? randomItem(players) : null;
     };
 
     Game.prototype.updateWarGameEnemyMissiles = function (dt) {
@@ -564,24 +613,28 @@
       missile.lockBeepTimer = nextInterval;
     };
 
-    Game.prototype.startWarVictimReport = function (city, victims, totalFrom, totalTo) {
-      this.wargame.victimReport = {
-        cityName: city.name,
-        victims,
-        totalFrom,
-        totalTo,
+    Game.prototype.startWarFinanceReport = function (site, details) {
+      this.wargame.financeReport = {
+        siteName: site.name,
+        costM: details.costM,
+        totalFrom: details.totalFrom,
+        totalTo: details.totalTo,
+        ropaLoss: details.ropaLoss,
+        previousRopa: details.previousRopa,
+        ropa: details.ropa,
+        executiveChange: details.executiveChange || null,
         elapsed: 0,
         duration: 1.25,
         hold: 1.05
       };
     };
 
-    Game.prototype.updateWarVictimReport = function (dt) {
-      const report = this.wargame.victimReport;
+    Game.prototype.updateWarFinanceReport = function (dt) {
+      const report = this.wargame.financeReport;
       if (!report) return;
       report.elapsed += dt;
       if (report.elapsed >= report.duration + report.hold) {
-        this.wargame.victimReport = null;
+        this.wargame.financeReport = null;
         if (this.wargame.pendingGameOverReason) {
           const reason = this.wargame.pendingGameOverReason;
           this.wargame.pendingGameOverReason = "";
@@ -590,25 +643,25 @@
       }
     };
 
-    Game.prototype.warVictimReportProgress = function () {
-      const report = this.wargame && this.wargame.victimReport;
+    Game.prototype.warFinanceReportProgress = function () {
+      const report = this.wargame && this.wargame.financeReport;
       if (!report) return 1;
       const t = clamp(report.elapsed / report.duration, 0, 1);
       return 1 - Math.pow(1 - t, 3);
     };
 
-    Game.prototype.warDisplayedVictims = function () {
+    Game.prototype.warDisplayedCost = function () {
       const state = this.wargame;
-      const report = state && state.victimReport;
-      if (!report) return state ? state.victims : 0;
-      const progress = this.warVictimReportProgress();
+      const report = state && state.financeReport;
+      if (!report) return state ? state.costM : 0;
+      const progress = this.warFinanceReportProgress();
       return Math.round(report.totalFrom + (report.totalTo - report.totalFrom) * progress);
     };
 
-    Game.prototype.warDisplayedEventVictims = function () {
-      const report = this.wargame && this.wargame.victimReport;
+    Game.prototype.warDisplayedEventCost = function () {
+      const report = this.wargame && this.wargame.financeReport;
       if (!report) return 0;
-      return Math.round(report.victims * this.warVictimReportProgress());
+      return Math.round(report.costM * this.warFinanceReportProgress());
     };
 
     Game.prototype.updateWarGameExplosions = function (dt) {
@@ -626,7 +679,7 @@
       if (state.gameOver || state.victory) return;
       const citiesLost = state.cities.every(city => !city.active);
       if (state.humanity <= 0 || citiesLost) {
-        if (state.victimReport) {
+        if (state.financeReport) {
           state.pendingGameOverReason = "humanity";
           return;
         }
@@ -897,7 +950,7 @@
       this.drawWarAircraft();
       this.drawWarExplosions();
       this.drawWarHud();
-      this.drawWarVictimReportOverlay();
+      this.drawWarFinanceReportOverlay();
       this.drawWarScanlines();
       ctx.restore();
     };
@@ -1197,7 +1250,7 @@
         if (sanctuary) {
           this.drawWarLabelText(city.lost ? "GEOSTOCK LOST" : "GEOSTOCK", labelX, labelY, 10, color, "center");
         } else {
-          this.drawWarLabelText(city.lost ? `${label} LOST` : label, labelX, labelY, 10, color, city.labelAlign || "left");
+          this.drawWarLabelText(city.lost ? `${label} OFFLINE` : label, labelX, labelY, 10, color, city.labelAlign || "left");
         }
         ctx.restore();
       }
@@ -1452,17 +1505,20 @@
       this.drawText(pilotName, 132, 84, 14, this.colors.white);
       this.drawText(`CALLSIGN: ${callsign}`, 132, 104, 10, this.colors.white);
       this.drawText("AIRCRAFT: PEACEKEEPER-50", 132, 124, 10, this.colors.white);
-      this.drawText(`HUMANITY: ${Math.round(state.humanity)}%`, 30, 146, 11, state.humanity <= 25 ? this.colors.red : this.colors.green);
-      this.drawText(`CITIES LOST: ${lost} / ${state.cities.length}`, 164, 146, 11, lost ? this.colors.red : this.colors.green);
+      this.drawText(`ROPA: ${formatWarRopa(state.ropa)}`, 30, 146, 11, state.ropa < WAR.ropaDangerThreshold ? this.colors.red : this.colors.green);
+      this.drawText(`SITES LOST: ${lost} / ${state.cities.length}`, 164, 146, 11, lost ? this.colors.red : this.colors.green);
 
       this.drawWarHudPanel(346, 14, 270, 72);
       this.drawText("WAR CONSOLE", 364, 38, 13, this.colors.white);
-      this.drawWarHudMeter(468, 27, 126, 7, state.humanity / 100);
-      const statusDanger = state.lastStatus.includes("LOST") || state.lastStatus.includes("BREACHED") || state.lastStatus.includes("ENEMY LOCK");
+      this.drawWarHudMeter(468, 27, 126, 7, state.ropa / WAR.ropaInitial);
+      const statusDanger = state.lastStatus.includes("LOST")
+        || state.lastStatus.includes("BREACHED")
+        || state.lastStatus.includes("DEMISSION")
+        || state.lastStatus.includes("ENEMY LOCK");
       const statusColor = statusDanger ? this.colors.red : this.colors.green;
       this.drawText(state.lastStatus, 364, 64, 10, statusColor);
       if (state.lastStatusDetail) this.drawText(state.lastStatusDetail, 364, 82, 9, this.colors.amber);
-      this.drawWarVictimCounter(346, 94, 270, 58, lost);
+      this.drawWarFinanceCounter(346, 94, 270, 58, lost);
 
       this.drawWarHudPanel(662, 12, 286, 110);
       this.drawWarMachinePortrait(machine, 850, 28, 84, 84, corePct);
@@ -1475,23 +1531,23 @@
       this.drawWarBottomStatusBar();
     };
 
-    Game.prototype.drawWarVictimCounter = function (x, y, w, h, lost) {
+    Game.prototype.drawWarFinanceCounter = function (x, y, w, h, lost) {
       const state = this.wargame;
-      const displayedVictims = this.warDisplayedVictims();
-      const alert = state.victims > 0;
-      const flash = state.victimFlash > 0 && Math.floor(performance.now() / 90) % 2 === 0;
+      const displayedCost = this.warDisplayedCost();
+      const alert = state.costM > 0 || state.ropa < WAR.ropaDangerThreshold;
+      const flash = state.financeFlash > 0 && Math.floor(performance.now() / 90) % 2 === 0;
       const color = flash || alert ? this.colors.red : this.colors.green;
       this.drawWarHudPanel(x, y, w, h, color);
-      this.drawText("TOTAL VICTIMS", x + 16, y + 18, 9, color);
-      this.drawText(formatWarVictimNumber(displayedVictims), x + w - 16, y + 40, 18, color, "right");
-      this.drawText(`CITY LOSS ${lost}/${state.cities.length}`, x + 16, y + 52, 8, alert ? this.colors.amber : this.colors.green);
+      this.drawText("COST / ROPA DROP", x + 16, y + 18, 9, color);
+      this.drawText(formatWarCost(displayedCost), x + w - 16, y + 40, 18, color, "right");
+      this.drawText(`ROPA ${formatWarRopa(state.ropa)}   SITES ${lost}/${state.cities.length}`, x + 16, y + 52, 8, alert ? this.colors.amber : this.colors.green);
     };
 
-    Game.prototype.drawWarVictimReportOverlay = function () {
-      const report = this.wargame && this.wargame.victimReport;
+    Game.prototype.drawWarFinanceReportOverlay = function () {
+      const report = this.wargame && this.wargame.financeReport;
       if (!report) return;
       const ctx = this.ctx;
-      const victims = this.warDisplayedEventVictims();
+      const costM = this.warDisplayedEventCost();
       const progress = clamp(report.elapsed / report.duration, 0, 1);
       const finalHold = progress >= 1;
       const alpha = report.elapsed > report.duration
@@ -1502,9 +1558,9 @@
       ctx.save();
       ctx.globalAlpha = alpha;
       const x = 300;
-      const y = 450;
+      const y = report.executiveChange ? 424 : 450;
       const w = 360;
-      const h = 42;
+      const h = report.executiveChange ? 64 : 46;
       this.drawWarHudPanel(x, y, w, h, this.colors.red);
       ctx.strokeStyle = this.colors.red;
       ctx.shadowColor = this.colors.red;
@@ -1512,8 +1568,12 @@
       ctx.globalAlpha = alpha * (finalHold ? 0.28 : 0.18 + pulse * 0.08);
       ctx.strokeRect(x + 7, y + 6, w - 14, h - 12);
       ctx.globalAlpha = alpha;
-      this.drawText(`CITY LOST: ${report.cityName.toUpperCase()}`, 480, y + 16, 9, this.colors.red, "center");
-      this.drawText(formatWarVictims(victims), 480, y + 34, 15, this.colors.red, "center");
+      this.drawText(`SITE LOST: ${report.siteName.toUpperCase()}`, 480, y + 16, 9, this.colors.red, "center");
+      this.drawText(`${formatWarCost(costM)}   ROPA -${formatWarRopaPoints(report.ropaLoss)}`, 480, y + 35, 14, this.colors.red, "center");
+      if (report.executiveChange) {
+        this.drawText("PATRICK SULLIOT DEMISSIONNE", 480, y + 52, 10, this.colors.amber, "center");
+        this.drawText(`${report.executiveChange.replacementName.toUpperCase()} PREND LE RELAIS`, 480, y + 63, 9, this.colors.white, "center");
+      }
       ctx.restore();
     };
 
@@ -1550,12 +1610,12 @@
       const w = 136;
       const h = 126;
       this.drawWarHudPanel(x, y, w, h);
-      this.drawText("GLOBAL STATUS", x + 12, y + 24, 10, this.colors.green);
+      this.drawText("VINCI STATUS", x + 12, y + 24, 10, this.colors.green);
       const rows = [
-        { label: "ACTIVE ZONE", color: this.colors.green, kind: "box" },
-        { label: "LOST ZONE", color: this.colors.red, kind: "box" },
+        { label: "ACTIVE SITE", color: this.colors.green, kind: "box" },
+        { label: "OFFLINE SITE", color: this.colors.red, kind: "box" },
         { label: "CRITICAL TARGET", color: this.colors.amber, kind: "box" },
-        { label: "CITY / NODE", color: this.colors.green, kind: "circle" },
+        { label: "FILIALE / NODE", color: this.colors.green, kind: "circle" },
         { label: "RADAR RANGE", color: this.colors.green, kind: "dash" }
       ];
       rows.forEach((row, index) => {
@@ -1596,7 +1656,7 @@
       const utc = now.toISOString().slice(11, 19);
       const state = this.wargame;
       const liveCities = state.cities.filter(city => city.active).length;
-      const threat = liveCities <= 4 || state.humanity <= 45 ? "HIGH" : state.enemyMissiles.length > 3 ? "ELEVATED" : "GUARDED";
+      const threat = liveCities <= 3 || state.ropa < WAR.ropaDangerThreshold ? "HIGH" : state.enemyMissiles.length > 3 ? "ELEVATED" : "GUARDED";
       const threatColor = threat === "HIGH" ? this.colors.red : threat === "ELEVATED" ? this.colors.amber : this.colors.green;
       this.drawWarHudPanel(12, 502, 132, 26);
       this.drawText(`UTC ${utc}`, 30, 520, 11, this.colors.green);
@@ -1819,7 +1879,7 @@
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, this.width, this.height);
       if (state.gameOverReason === "humanity") {
-        this.neon("HUMANITY LOST", this.width / 2, 242, 42, this.colors.red, "center");
+        this.neon("ROPA COLLAPSED", this.width / 2, 242, 42, this.colors.red, "center");
         this.neon("GAME OVER", this.width / 2, 300, 58, this.colors.red, "center");
       } else {
         this.neon("GAME OVER", this.width / 2, 284, 72, this.colors.red, "center");
@@ -1845,7 +1905,7 @@
       this.drawWarConsoleGrid(0.16);
       this.neon("MACHINE CORE DESTROYED", 480, 178, 32, this.colors.green, "center");
       this.drawText("GLOBAL STRIKE ABORTED", 480, 232, 23, this.colors.white, "center");
-      this.drawText("HUMANITY STATUS: DAMAGED BUT ALIVE", 480, 272, 19, this.colors.amber, "center");
+      this.drawText("ROPA STATUS: DAMAGED BUT ALIVE", 480, 272, 19, this.colors.amber, "center");
       this.neon("MISSION COMPLETE", 480, 330, 42, this.colors.green, "center");
       this.drawText(`${playerName} a sauvé l'humanité. Merci.`, 480, 382, 18, this.colors.white, "center");
       this.drawWarGameRestartButton();
@@ -2086,25 +2146,19 @@
     return list[Math.floor(Math.random() * list.length)];
   }
 
-  function formatWarVictimNumber(value) {
-    const integer = Math.max(0, Math.round(Number(value) || 0));
-    if (integer >= 1000000000) return formatWarBillions(integer);
-    return String(integer).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  function formatWarCost(value) {
+    const amount = Math.max(0, Math.round(Number(value) || 0));
+    return `${amount} M€`;
   }
 
-  function formatWarVictims(value) {
-    const integer = Math.max(0, Math.round(Number(value) || 0));
-    if (integer >= 1000000000) return `${formatWarBillions(integer)} de victimes`;
-    return `${formatWarVictimNumber(integer)} VICTIMES`;
+  function formatWarRopa(value) {
+    const number = Math.max(0, Number(value) || 0);
+    return `${number.toFixed(1)}%`;
   }
 
-  function formatWarBillions(value) {
-    const rounded = Math.round((value / 1000000000) * 10) / 10;
-    const number = rounded.toLocaleString("fr-FR", {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1
-    });
-    return `${number} ${rounded === 1 ? "milliard" : "milliards"}`;
+  function formatWarRopaPoints(value) {
+    const number = Math.max(0, Number(value) || 0);
+    return `${number.toFixed(1)} pt`;
   }
 
   function clamp(value, min, max) {

@@ -379,6 +379,42 @@ test("wargame sanctuary is GEOSTOCK", () => {
   assert.equal(game.wargame.lastStatus, "GEOSTOCK ONLINE");
 });
 
+test("wargame targets VINCI sites and tracks cost ROPA and executive change", () => {
+  const windowRef = loadWargameHarness();
+  const game = new windowRef.Game();
+  game.colors = { red: "#ff3855", amber: "#ffd04f", green: "#39ff68" };
+
+  game.resetWarGameState();
+  const names = game.wargame.cities.map(site => site.name);
+  assert.equal(JSON.stringify(names), JSON.stringify([
+    "VCGP",
+    "Spiecapag",
+    "Géocéan",
+    "GEOSTOCK",
+    "Entrepose",
+    "VINCI Construction",
+    "Soletanche Bachy"
+  ]));
+
+  const vcgp = game.wargame.cities.find(site => site.id === "vcgp");
+  game.applyWarSiteLoss(vcgp);
+
+  assert.equal(game.wargame.costM, 46);
+  assert.equal(game.wargame.financeReport.siteName, "VCGP");
+  assert.equal(game.wargame.financeReport.costM, 46);
+  assert.equal(game.wargame.ropa, 5.5);
+  assert.equal(game.wargame.lastStatusDetail.includes("M€"), true);
+  assert.equal(game.wargame.lastStatusDetail.includes("ROPA"), true);
+
+  game.wargame.ropa = 1.05;
+  const spiecapag = game.wargame.cities.find(site => site.id === "spiecapag");
+  game.applyWarSiteLoss(spiecapag);
+
+  assert.equal(game.wargame.executiveChanged, true);
+  assert.notEqual(game.wargame.president, "Patrick Sulliot");
+  assert.match(game.wargame.financeReport.executiveChange.message, /Patrick Sulliot démissionne/);
+});
+
 test("wargame end restart button starts a fresh mission", () => {
   const windowRef = loadWargameHarness();
   const game = new windowRef.Game();
